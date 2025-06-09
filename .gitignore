@@ -1,0 +1,77 @@
+# WordPress Core Files
+wp-admin/
+wp-includes/
+wp-*.php
+xmlrpc.php
+readme.html
+license.txt
+
+# Configuration Files (sensitive)
+wp-config.php
+wp-config-local.php
+local-xdebuginfo.php
+
+# Uploads and Cache
+wp-content/uploads/
+wp-content/cache/
+wp-content/upgrade/
+wp-content/backup*/
+wp-content/backups/
+wp-content/blogs.dir/
+
+# Plugin and Theme Updates
+wp-content/plugins/*/readme.txt
+wp-content/plugins/*/README.txt
+wp-content/plugins/*/changelog.txt
+wp-content/plugins/*/CHANGELOG.txt
+
+# Log Files
+*.log
+error_log
+debug.log
+
+# System Files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+*~
+
+# IDE Files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Node.js (if using build tools)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Composer (if using)
+vendor/
+
+# Environment Files
+.env
+.env.local
+.env.production
+
+# Temporary Files
+*.tmp
+*.temp
+
+# Backup Files
+*.bak
+*.backup
+
+# Database Dumps
+*.sql
+*.sqlite
+
+# htaccess backup
+.htaccess.bak 
