@@ -74,4 +74,4 @@ vendor/
 *.sqlite
 
 # htaccess backup
-.htaccess.bak 
+.htaccess.bak
