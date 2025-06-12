@@ -9,12 +9,276 @@
  * @since Twenty Twenty-Five 1.0
  */
 
-// Include the authentication handler
-require_once get_template_directory() . '/auth-handler.php';
+// התחלת session לטיפול בהודעות משתמש
+if (!session_id() && !headers_sent()) {
+    session_start();
+}
 
-// יוצר מופע גלובלי של מערכת האימות
-global $crm_auth;
-$crm_auth = new CRM_Auth_Handler();
+// כפיית כניסה לכל האתר - חוץ מדפי כניסה ומאבטחת ווארדפרס
+function force_login_for_entire_site() {
+    // אם המשתמש כבר מחובר, לא צריך לעשות כלום
+    if (is_user_logged_in()) {
+        return;
+    }
+    
+    // בדיקה אם זה Ajax או REST API
+    if (wp_doing_ajax() || (defined('REST_REQUEST') && REST_REQUEST)) {
+        return;
+    }
+    
+    // בדיקה אם זה עמוד אדמין
+    if (is_admin()) {
+        return;
+    }
+    
+    // רשימת דפים שמותרים בלי כניסה (עמודי אימות של ווארדפרס)
+    $allowed_actions = array(
+        'login',
+        'lostpassword',
+        'resetpass',
+        'rp',
+        'register',
+        'checkemail'
+    );
+    
+    // בדיקה מיוחדת לדפי אימות של ווארדפרס
+    if (strpos($_SERVER['REQUEST_URI'], 'wp-login.php') !== false) {
+        return;
+    }
+    
+    if (strpos($_SERVER['REQUEST_URI'], 'wp-register.php') !== false) {
+        return;
+    }
+    
+    if (strpos($_SERVER['REQUEST_URI'], 'wp-signup.php') !== false) {
+        return;
+    }
+    
+    if (strpos($_SERVER['REQUEST_URI'], 'wp-activate.php') !== false) {
+        return;
+    }
+    
+    // בדיקה נוספת לפעולות אימות
+    if (isset($_GET['action']) && in_array($_GET['action'], $allowed_actions)) {
+        return;
+    }
+    
+    // שמירה על ה-URL הנוכחי להפניה חזרה אחרי הכניסה
+    $redirect_url = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http") . "://" . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'];
+    
+    // הפניה לדף הכניסה
+    wp_redirect(wp_login_url($redirect_url));
+    exit;
+}
+
+// הוספת הפונקציה להוק template_redirect
+add_action('template_redirect', 'force_login_for_entire_site');
+
+// עיצוב עמוד הכניסה בסגנון האתר
+function customize_login_page() {
+    ?>
+    <style type="text/css">
+        body.login {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            direction: rtl;
+        }
+
+        #login {
+            width: 400px;
+            margin: 5% auto;
+        }
+
+        .login h1 a {
+            background-image: none !important;
+            color: #fff;
+            font-size: 28px;
+            font-weight: bold;
+            text-decoration: none;
+            text-indent: 0 !important;
+            width: auto !important;
+            height: auto !important;
+            text-align: center;
+            padding: 20px 0;
+        }
+
+        .login h1 a:before {
+            content: "🌟";
+            display: block;
+            font-size: 48px;
+            margin-bottom: 10px;
+        }
+
+        .login form {
+            background: rgba(255, 255, 255, 0.95);
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+            padding: 40px;
+            margin-top: 30px;
+        }
+
+        .login form .input,
+        .login input[type="text"],
+        .login input[type="password"] {
+            background: #f8f9fa;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 16px;
+            padding: 12px 15px;
+            transition: all 0.3s ease;
+            text-align: right;
+        }
+
+        .login form .input:focus,
+        .login input[type="text"]:focus,
+        .login input[type="password"]:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            outline: none;
+        }
+
+        .login label {
+            color: #495057;
+            font-weight: 500;
+            margin-bottom: 8px;
+            text-align: right;
+            display: block;
+        }
+
+        .login .button-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 8px;
+            color: #fff;
+            font-size: 16px;
+            font-weight: 600;
+            padding: 12px 30px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            transition: all 0.3s ease;
+            width: 100%;
+            margin-top: 20px;
+        }
+
+        .login .button-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+        }
+
+        .login .forgetmenot {
+            text-align: right;
+            margin: 20px 0;
+        }
+
+        .login .forgetmenot label {
+            font-size: 14px;
+            color: #6c757d;
+        }
+
+        .login #nav,
+        .login #backtoblog {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .login #nav a,
+        .login #backtoblog a {
+            color: rgba(255, 255, 255, 0.8);
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+
+        .login #nav a:hover,
+        .login #backtoblog a:hover {
+            color: #fff;
+        }
+
+        .login .message,
+        .login .notice {
+            background: rgba(255, 255, 255, 0.9);
+            border: none;
+            border-radius: 8px;
+            color: #495057;
+            text-align: center;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+
+        .login .message.success {
+            background: rgba(40, 167, 69, 0.1);
+            color: #28a745;
+        }
+
+        .login-title {
+            color: #fff;
+            text-align: center;
+            font-size: 24px;
+            margin-bottom: 10px;
+            font-weight: 300;
+        }
+
+        .login-subtitle {
+            color: rgba(255, 255, 255, 0.8);
+            text-align: center;
+            font-size: 16px;
+            margin-bottom: 30px;
+        }
+    </style>
+    <script type="text/javascript">
+        document.addEventListener('DOMContentLoaded', function() {
+            // הוספת כותרת מותאמת
+            var loginHeader = document.querySelector('#login h1 a');
+            if (loginHeader) {
+                loginHeader.innerHTML = 'CRM תזונה - מרים קרישבסקי';
+            }
+            
+            // הוספת כותרות נוספות
+            var form = document.querySelector('#loginform');
+            if (form) {
+                var titleDiv = document.createElement('div');
+                titleDiv.className = 'login-title';
+                titleDiv.innerHTML = 'ברוכים הבאים למערכת';
+                
+                var subtitleDiv = document.createElement('div');
+                subtitleDiv.className = 'login-subtitle';
+                subtitleDiv.innerHTML = 'אנא הזינו את פרטי הכניסה שלכם';
+                
+                form.parentNode.insertBefore(titleDiv, form);
+                form.parentNode.insertBefore(subtitleDiv, form);
+            }
+        });
+    </script>
+    <?php
+}
+add_action('login_head', 'customize_login_page');
+
+// שינוי הלוגו בעמוד הכניסה להפנות לבית
+function change_login_logo_url() {
+    return home_url();
+}
+add_filter('login_headerurl', 'change_login_logo_url');
+
+// שינוי הטקסט של הלוגו בעמוד הכניסה
+function change_login_logo_text() {
+    return 'CRM תזונה - מרים קרישבסקי';
+}
+add_filter('login_headertext', 'change_login_logo_text');
+
+// הוספת הודעת ברוכים הבאים אחרי כניסה מוצלחת
+function custom_login_redirect($redirect_to, $request, $user) {
+    // אם יש בקשה להפניה לדף מסוים, נכבד את זה
+    if (!empty($request)) {
+        return $request;
+    }
+    
+    // אחרת נפנה לעמוד הבית
+    return home_url();
+}
+add_filter('login_redirect', 'custom_login_redirect', 10, 3);
+
+// הוספת הפונקציה להוק template_redirect
+add_action('template_redirect', 'force_login_for_entire_site');
 
 // הפעלה אוטומטית של תוסף ACF אם הוא קיים אבל לא פעיל
 function auto_activate_acf() {
@@ -869,33 +1133,8 @@ function create_crm_pages() {
     // רשימת העמודים שצריך ליצור
     $pages_to_create = array(
         array(
-            'slug' => 'login',
-            'title' => 'התחברות למערכת CRM',
-            'template' => 'page-login.php'
-        ),
-        array(
-            'slug' => 'crm-dashboard',
-            'title' => 'דשבורד CRM',
-            'template' => 'page-crm-dashboard.php'
-        ),
-        array(
-            'slug' => 'add-client',
-            'title' => 'הוספת מתאמנת',
-            'template' => 'page-add-client.php'
-        ),
-        array(
-            'slug' => 'add-mentor',
-            'title' => 'הוספת מנטור',
-            'template' => 'page-add-mentor.php'
-        ),
-        array(
-            'slug' => 'add-group',
-            'title' => 'הוספת קבוצה',
-            'template' => 'page-add-group.php'
-        ),
-        array(
             'slug' => 'dashboard',
-            'title' => 'דשבורד CRM (ישן)',
+            'title' => 'דשבורד CRM',
             'template' => 'page-dashboard.php'
         ),
         array(
@@ -930,19 +1169,6 @@ function create_crm_pages() {
 
 // הפעלת הפונקציה בטעינת התמה
 add_action('after_setup_theme', 'create_crm_pages');
-
-// הפעלה מיידית לעדכון חד-פעמי
-add_action('init', 'create_crm_pages_now', 1);
-function create_crm_pages_now() {
-    // בדוק אם כבר רצנו את העדכון - נכריח ריצה חדשה
-    if (get_option('crm_pages_created_v3', false) === false) {
-        create_crm_pages();
-        update_option('crm_pages_created_v3', true);
-        
-        // נקה rewrite rules
-        flush_rewrite_rules();
-    }
-}
 
 // דאיגה ל-rewrite rules
 function crm_flush_rewrite_rules() {
@@ -980,8 +1206,6 @@ add_action('admin_init', 'add_crm_capabilities');
 // טעינת קובץ נתוני הדמו
 require_once get_template_directory() . '/sample-data.php';
 
-// מערכת האימות נטענת למעלה
-
 // פונקציה לטופס הוספת מתאמנת
 function add_client_form_page() {
     include(get_template_directory() . '/add-client-form.php');
@@ -994,7 +1218,7 @@ function add_mentor_form_page() {
 
 // טיפול בשליחת טופס מתאמנת חדשה
 function handle_add_client_form() {
-    if (!isset($_POST['client_nonce']) || !wp_verify_nonce($_POST['client_nonce'], 'add_client_action')) {
+    if (!isset($_POST['add_client_nonce']) || !wp_verify_nonce($_POST['add_client_nonce'], 'add_client_action')) {
         wp_die('שגיאת אבטחה');
     }
     
@@ -1068,7 +1292,7 @@ add_action('admin_post_add_client', 'handle_add_client_form');
 
 // טיפול בשליחת טופס מנטורית חדשה
 function handle_add_mentor_form() {
-    if (!isset($_POST['mentor_nonce']) || !wp_verify_nonce($_POST['mentor_nonce'], 'add_mentor_action')) {
+    if (!isset($_POST['add_mentor_nonce']) || !wp_verify_nonce($_POST['add_mentor_nonce'], 'add_mentor_action')) {
         wp_die('שגיאת אבטחה');
     }
     
@@ -1113,7 +1337,7 @@ add_action('admin_post_add_mentor', 'handle_add_mentor_form');
 
 // טיפול בעריכת מתאמנת קיימת
 function handle_edit_client_form() {
-    if (!isset($_POST['client_nonce']) || !wp_verify_nonce($_POST['client_nonce'], 'edit_client_action')) {
+    if (!isset($_POST['edit_client_nonce']) || !wp_verify_nonce($_POST['edit_client_nonce'], 'edit_client_action')) {
         wp_die('שגיאת אבטחה');
     }
     
@@ -1193,7 +1417,7 @@ add_action('admin_post_edit_client', 'handle_edit_client_form');
 
 // טיפול בעריכת מנטורית קיימת
 function handle_edit_mentor_form() {
-    if (!isset($_POST['mentor_nonce']) || !wp_verify_nonce($_POST['mentor_nonce'], 'edit_mentor_action')) {
+    if (!isset($_POST['edit_mentor_nonce']) || !wp_verify_nonce($_POST['edit_mentor_nonce'], 'edit_mentor_action')) {
         wp_die('שגיאת אבטחה');
     }
     
@@ -1242,7 +1466,7 @@ add_action('admin_post_edit_mentor', 'handle_edit_mentor_form');
 
 // טיפול בשליחת טופס קבוצה חדשה
 function handle_add_group_form() {
-    if (!isset($_POST['group_nonce']) || !wp_verify_nonce($_POST['group_nonce'], 'add_group_action')) {
+    if (!isset($_POST['add_group_nonce']) || !wp_verify_nonce($_POST['add_group_nonce'], 'add_group_action')) {
         wp_die('שגיאת אבטחה');
     }
     
@@ -1287,7 +1511,7 @@ add_action('admin_post_add_group', 'handle_add_group_form');
 
 // טיפול בעריכת קבוצה קיימת
 function handle_edit_group_form() {
-    if (!isset($_POST['group_nonce']) || !wp_verify_nonce($_POST['group_nonce'], 'edit_group_action')) {
+    if (!isset($_POST['edit_group_nonce']) || !wp_verify_nonce($_POST['edit_group_nonce'], 'edit_group_action')) {
         wp_die('שגיאת אבטחה');
     }
     
@@ -1333,3 +1557,350 @@ function handle_edit_group_form() {
     }
 }
 add_action('admin_post_edit_group', 'handle_edit_group_form');
+
+// הסתרת סרגל צדדי עבור משתמש מסוים
+function hide_admin_sidebar_for_specific_user() {
+    $current_user = wp_get_current_user();
+    
+    // בדיקה אם המשתמש הנוכחי הוא miriamKryshevski
+    if ($current_user->user_login === 'miriamKryshevski') {
+        ?>
+        <style type="text/css">
+            /* דריסה מוחלטת של מערכת הפריסה של WordPress */
+            html {
+                overflow-x: hidden !important;
+            }
+            
+            body.wp-admin {
+                margin: 0 !important;
+                padding: 0 !important;
+                background: #f8fafc !important;
+                overflow-x: hidden !important;
+            }
+            
+            /* הסתרה מוחלטת של כל אלמנטי האדמין */
+            #wpadminbar,
+            #adminmenumain,
+            #adminmenuwrap,
+            #wpfooter,
+            .screen-meta-links,
+            #screen-meta,
+            .page-title-action,
+            .update-nag,
+            #screen-options-link-wrap,
+            #contextual-help-link-wrap {
+                display: none !important;
+            }
+            
+            /* דריסה קיצונית של מבנה הפריסה */
+            #wpwrap {
+                background: #f8fafc !important;
+                margin: 0 !important;
+                padding: 0 !important;
+            }
+            
+            #wpcontent {
+                margin: 0 !important;
+                padding: 0 !important;
+                width: 100vw !important;
+                max-width: 100vw !important;
+                background: #f8fafc !important;
+                position: relative !important;
+                left: 0 !important;
+                right: 0 !important;
+            }
+            
+            #wpbody {
+                margin: 0 !important;
+                padding: 0 !important;
+                width: 100% !important;
+                background: #f8fafc !important;
+            }
+            
+            #wpbody-content {
+                margin: 0 !important;
+                padding: 0 !important;
+                width: 100% !important;
+            }
+            
+            /* עטיפה ראשית של התוכן */
+            .wrap {
+                background: #f8fafc !important;
+                padding: 20px !important;
+                margin: 0 auto !important;
+                min-height: 100vh !important;
+                width: 100% !important;
+                max-width: 1400px !important;
+                box-sizing: border-box !important;
+            }
+            
+            /* שיפור הכותרת */
+            .wrap h1 {
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+                color: white !important;
+                padding: 20px 30px !important;
+                border-radius: 10px !important;
+                margin-bottom: 30px !important;
+                box-shadow: 0 4px 15px rgba(0,0,0,0.1) !important;
+                text-align: center !important;
+            }
+            
+            /* דריסה של כל האלמנטים שעלולים ליצור רוחב יתר */
+            * {
+                max-width: 100% !important;
+                box-sizing: border-box !important;
+            }
+            
+            /* התאמה למסכים קטנים */
+            @media screen and (max-width: 782px) {
+                .wrap {
+                    padding: 15px !important;
+                    max-width: 100% !important;
+                }
+                
+                .wrap h1 {
+                    padding: 15px 20px !important;
+                    font-size: 1.5em !important;
+                }
+            }
+        </style>
+        
+        <script type="text/javascript">
+            jQuery(document).ready(function($) {
+                // הסרת אלמנטים נוספים שעלולים להופיע
+                $('#collapse-menu').remove();
+                $('.folded').removeClass('folded');
+                
+                // הסתרת הודעות מערכת לא רלוונטיות
+                $('.update-nag, .notice-warning').each(function() {
+                    if ($(this).text().indexOf('WordPress') > -1 || 
+                        $(this).text().indexOf('plugin') > -1 ||
+                        $(this).text().indexOf('פלאגין') > -1) {
+                        $(this).hide();
+                    }
+                });
+                
+                // הוספת כפתור "חזור" אם צריך
+                if (window.location.href.indexOf('edit=') > -1) {
+                    $('.wrap h1').after('<div style="text-align: center; margin-bottom: 20px;"><a href="' + 
+                        window.location.href.split('&edit=')[0] + 
+                        '" class="button button-secondary">🔙 חזור לטופס חדש</a></div>');
+                }
+            });
+        </script>
+        <?php
+    }
+}
+add_action('admin_head', 'hide_admin_sidebar_for_specific_user');
+
+// תרגום טקסטים בעמוד הכניסה לעברית
+function translate_login_page_texts() {
+    ?>
+    <script type="text/javascript">
+        document.addEventListener('DOMContentLoaded', function() {
+            // תרגום שדות הכניסה
+            var usernameLabel = document.querySelector('label[for="user_login"]');
+            if (usernameLabel) {
+                usernameLabel.innerHTML = 'שם משתמש או אימייל';
+            }
+            
+            var passwordLabel = document.querySelector('label[for="user_pass"]');
+            if (passwordLabel) {
+                passwordLabel.innerHTML = 'סיסמה';
+            }
+
+            var usernameInput = document.querySelector('#user_login');
+            if (usernameInput) {
+                usernameInput.setAttribute('placeholder', 'הזן שם משתמש או אימייל');
+            }
+
+            var passwordInput = document.querySelector('#user_pass');
+            if (passwordInput) {
+                passwordInput.setAttribute('placeholder', 'הזן סיסמה');
+            }
+            
+            // תרגום כפתור הכניסה
+            var submitButton = document.querySelector('#wp-submit');
+            if (submitButton) {
+                submitButton.value = '🔑 כניסה למערכת';
+            }
+            
+            // תרגום "זכור אותי"
+            var rememberLabel = document.querySelector('.forgetmenot label');
+            if (rememberLabel) {
+                rememberLabel.innerHTML = rememberLabel.innerHTML.replace('Remember Me', 'זכור אותי');
+            }
+            
+            // תרגום קישורים
+            var lostPasswordLink = document.querySelector('#nav a');
+            if (lostPasswordLink && lostPasswordLink.href.includes('wp-login.php?action=lostpassword')) {
+                lostPasswordLink.innerHTML = '🔐 שכחת סיסמה?';
+            }
+            
+            var backToBlogLink = document.querySelector('#backtoblog a');
+            if (backToBlogLink) {
+                backToBlogLink.innerHTML = '← חזרה לאתר';
+            }
+        });
+    </script>
+    <?php
+}
+add_action('login_footer', 'translate_login_page_texts');
+
+// הוספת סגנונות נוספים לעמוד הכניסה
+function additional_login_styles() {
+    ?>
+    <style type="text/css">
+        /* אנימציות נוספות */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .login form {
+            animation: fadeInUp 0.6s ease-out;
+        }
+
+        .login h1 a {
+            animation: fadeInUp 0.4s ease-out;
+        }
+
+        /* שיפור עיצוב השדות */
+        .login form .input::placeholder,
+        .login input[type="text"]::placeholder,
+        .login input[type="password"]::placeholder {
+            color: #6c757d;
+            font-style: italic;
+        }
+
+        /* עיצוב משופר לכפתור */
+        .login .button-primary:active {
+            transform: translateY(0);
+        }
+
+        /* עיצוב לשגיאות */
+        .login .login-error-list,
+        .login .error {
+            background: rgba(220, 53, 69, 0.1);
+            border: 1px solid rgba(220, 53, 69, 0.3);
+            color: #dc3545;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        /* עיצוב לא טוב כלום */
+        .login .success {
+            background: rgba(40, 167, 69, 0.1);
+            border: 1px solid rgba(40, 167, 69, 0.3);
+            color: #28a745;
+        }
+
+        /* שיפור למובייל */
+        @media (max-width: 480px) {
+            #login {
+                width: 90%;
+                margin: 2% auto;
+            }
+            
+            .login form {
+                padding: 25px;
+            }
+            
+            .login h1 a {
+                font-size: 24px;
+            }
+            
+            .login-title {
+                font-size: 20px;
+            }
+        }
+    </style>
+    <?php
+}
+add_action('login_head', 'additional_login_styles', 20);
+
+// הפניה לעמוד הכניסה אחרי יציאה
+function custom_logout_redirect() {
+    wp_redirect(wp_login_url());
+    exit;
+}
+add_action('wp_logout', 'custom_logout_redirect');
+
+// הודעה מותאמת אחרי יציאה מוצלחת
+function custom_logout_message($message) {
+    if (isset($_GET['loggedout']) && $_GET['loggedout'] == 'true') {
+        $message = '<div class="message">יצאת בהצלחה מהמערכת. תודה על השימוש! 👋</div>';
+    }
+    return $message;
+}
+add_filter('login_message', 'custom_logout_message');
+
+// הגבלת גישה לאזור האדמין (אופציונלי - אם רוצים להגביל)
+function restrict_admin_access() {
+    // אם המשתמש לא מחובר, לא צריך לבדוק
+    if (!is_user_logged_in()) {
+        return;
+    }
+    
+    // אם זה לא אזור אדמין, לא צריך לבדוק
+    if (!is_admin()) {
+        return;
+    }
+    
+    // אם זה Ajax, מותר
+    if (wp_doing_ajax()) {
+        return;
+    }
+    
+    // אפשר למשתמשים עם יכולות מינימליות לגשת לפרופיל שלהם
+    if (current_user_can('read')) {
+        // אבל רק לדפים מסוימים
+        $allowed_admin_pages = array(
+            'profile.php',
+            'user-edit.php',
+            'admin-ajax.php'
+        );
+        
+        $current_page = basename($_SERVER['PHP_SELF']);
+        
+        if (!in_array($current_page, $allowed_admin_pages) && !current_user_can('manage_options')) {
+            // הפניה לעמוד הראשי
+            wp_redirect(home_url());
+            exit;
+        }
+    }
+}
+// מוגיב כרגע - אפשר להפעיל אם רוצים הגבלה נוספת
+// add_action('admin_init', 'restrict_admin_access');
+
+// הוספת הודעת ברוכים הבאים למשתמש חדש
+function welcome_new_user($user_login, $user) {
+    $_SESSION['first_login'] = true;
+}
+add_action('wp_login', 'welcome_new_user', 10, 2);
+
+// הצגת הודעת ברוכים הבאים בעמוד הראשי
+function show_welcome_message() {
+    if (isset($_SESSION['first_login']) && $_SESSION['first_login'] == true) {
+        echo '<div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; text-align: center; margin: 20px 0; border-radius: 10px; font-size: 18px;">
+                🎉 ברוכים הבאים למערכת CRM תזונה של מרים קרישבסקי! 🎉<br>
+                <small style="margin-top: 10px; display: block;">כעת תוכל לנהל את המתאמנות, המנטוריות והקבוצות שלך בקלות</small>
+              </div>';
+        
+        // מחיקת ההודעה לאחר הצגה
+        unset($_SESSION['first_login']);
+    }
+}
+add_action('wp_footer', 'show_welcome_message');
+
+
+
+

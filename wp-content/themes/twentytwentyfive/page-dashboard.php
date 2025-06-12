@@ -552,9 +552,176 @@ get_header(); ?>
         ));
     }
 
+    // פונקציה לקבלת נתוני "מה חדש השבוע"
+    function get_weekly_updates() {
+        // חישוב תחילת השבוע (יום ראשון)
+        $current_day = date('w'); // 0=ראשון, 1=שני, וכו'
+        if ($current_day == 0) {
+            // אם היום הוא ראשון, השבוע התחיל היום
+            $week_start = date('Y-m-d');
+        } else {
+            // אחרת, חזור לראשון הקודם
+            $week_start = date('Y-m-d', strtotime('-' . $current_day . ' days'));
+        }
+        $today = date('Y-m-d');
+        
+        // מתאמנות חדשות השבוע - גם לפי תאריך יצירה וגם לפי תאריך התחלה
+        $new_clients_by_creation = get_posts(array(
+            'post_type' => 'clients',
+            'posts_per_page' => -1,
+            'post_status' => 'publish',
+            'date_query' => array(
+                array(
+                    'after' => $week_start,
+                    'before' => $today . ' 23:59:59',
+                    'inclusive' => true
+                )
+            )
+        ));
+        
+        $new_clients_by_start = get_posts(array(
+            'post_type' => 'clients',
+            'posts_per_page' => -1,
+            'post_status' => 'publish',
+            'meta_query' => array(
+                array(
+                    'key' => 'start_date',
+                    'value' => array($week_start, $today),
+                    'compare' => 'BETWEEN',
+                    'type' => 'DATE'
+                )
+            )
+        ));
+        
+        // מיזוג והסרת כפילויות
+        $new_clients_ids = array();
+        $new_clients = array();
+        
+        foreach (array_merge($new_clients_by_creation, $new_clients_by_start) as $client) {
+            if (!in_array($client->ID, $new_clients_ids)) {
+                $new_clients_ids[] = $client->ID;
+                $new_clients[] = $client;
+            }
+        }
+        
+        // קבוצות חדשות השבוע - גם לפי יצירה וגם לפי תאריך התחלה
+        $new_groups_by_creation = get_posts(array(
+            'post_type' => 'groups',
+            'posts_per_page' => -1,
+            'post_status' => 'publish',
+            'date_query' => array(
+                array(
+                    'after' => $week_start,
+                    'before' => $today . ' 23:59:59',
+                    'inclusive' => true
+                )
+            )
+        ));
+        
+        $new_groups_by_start = get_posts(array(
+            'post_type' => 'groups',
+            'posts_per_page' => -1,
+            'post_status' => 'publish',
+            'meta_query' => array(
+                array(
+                    'key' => 'group_start_date',
+                    'value' => array($week_start, $today),
+                    'compare' => 'BETWEEN',
+                    'type' => 'DATE'
+                )
+            )
+        ));
+        
+        // מיזוג קבוצות
+        $new_groups_ids = array();
+        $new_groups = array();
+        
+        foreach (array_merge($new_groups_by_creation, $new_groups_by_start) as $group) {
+            if (!in_array($group->ID, $new_groups_ids)) {
+                $new_groups_ids[] = $group->ID;
+                $new_groups[] = $group;
+            }
+        }
+        
+        // מנטוריות חדשות השבוע
+        $new_mentors = get_posts(array(
+            'post_type' => 'mentors',
+            'posts_per_page' => -1,
+            'post_status' => 'publish',
+            'date_query' => array(
+                array(
+                    'after' => $week_start,
+                    'before' => $today . ' 23:59:59',
+                    'inclusive' => true
+                )
+            )
+        ));
+        
+        // תשלומים שהתעדכנו השבוע - חיפוש בשתי דרכים
+        $payments_by_payment_date = get_posts(array(
+            'post_type' => 'clients',
+            'posts_per_page' => -1,
+            'post_status' => 'publish',
+            'meta_query' => array(
+                array(
+                    'key' => 'payment_date',
+                    'value' => array($week_start, $today),
+                    'compare' => 'BETWEEN',
+                    'type' => 'DATE'
+                )
+            )
+        ));
+        
+        // תשלומים שהתעדכנו השבוע - גישה משופרת
+        // נחפש את כל המתאמנות עם תשלומים ונבדוק אם הן התעדכנו השבוע
+        $all_clients_with_payments = get_posts(array(
+            'post_type' => 'clients',
+            'posts_per_page' => -1,
+            'post_status' => 'publish',
+            'meta_query' => array(
+                array(
+                    'key' => 'amount_paid',
+                    'value' => 0,
+                    'compare' => '>',
+                    'type' => 'NUMERIC'
+                )
+            )
+        ));
+        
+        $payments_by_modification = array();
+        foreach ($all_clients_with_payments as $client) {
+            // בדיקה אם הפוסט התעדכן השבוע
+            $post_modified = strtotime($client->post_modified);
+            $week_start_timestamp = strtotime($week_start);
+            
+            if ($post_modified >= $week_start_timestamp) {
+                $payments_by_modification[] = $client;
+            }
+        }
+        
+        // מיזוג תשלומים והסרת כפילויות
+        $updated_payments_ids = array();
+        $updated_payments = array();
+        
+        foreach (array_merge($payments_by_payment_date, $payments_by_modification) as $payment) {
+            if (!in_array($payment->ID, $updated_payments_ids)) {
+                $updated_payments_ids[] = $payment->ID;
+                $updated_payments[] = $payment;
+            }
+        }
+        
+        return array(
+            'new_clients' => $new_clients,
+            'new_groups' => $new_groups,
+            'new_mentors' => $new_mentors,
+            'updated_payments' => $updated_payments
+        );
+    }
+
     $stats = get_public_clients_stats();
     $ending_soon = get_public_ending_soon_clients();
     $frozen_clients = get_public_frozen_clients();
+    $weekly_data = get_weekly_updates();
     ?>
 
     <!-- סטטיסטיקות כלליות -->
@@ -826,25 +993,154 @@ get_header(); ?>
     <!-- פעולות מהירות -->
     <div class="dashboard-section">
         <h3 class="section-title">
-            🔗 קישורים מהירים
+            🚀 פעולות מהירות
         </h3>
-        <div class="quick-actions">
-            <a href="<?php echo get_post_type_archive_link('clients') ?: home_url('/clients/'); ?>" class="action-button">
-                👥 צפה בכל המתאמנות
+        <div class="quick-actions" style="grid-template-columns: repeat(5, 1fr); gap: 15px;">
+            <a href="<?php echo admin_url('admin.php?page=add-client-form'); ?>" class="action-button" style="background: #059669; font-size: 14px; padding: 15px 10px;">
+                👥 הוסף מתאמנת חדשה
             </a>
-            <a href="<?php echo home_url('/finished-clients/'); ?>" class="action-button secondary">
-                📝 מתאמנות שסיימו
+            <a href="<?php echo admin_url('admin.php?page=add-mentor-form'); ?>" class="action-button" style="background: #0d9488; font-size: 14px; padding: 15px 10px;">
+                📝 הוסף מנטורית חדשה
             </a>
-            <a href="<?php echo get_post_type_archive_link('mentors') ?: home_url('/mentors/'); ?>" class="action-button secondary">
-                👩‍💼 מנטוריות
+            <a href="<?php echo admin_url('admin.php?page=add-group-form'); ?>" class="action-button" style="background: #0891b2; font-size: 14px; padding: 15px 10px;">
+                ✨ צור קבוצה חדשה
             </a>
-            <?php if (current_user_can('manage_options')): ?>
-                <a href="<?php echo admin_url('admin.php?page=payments-management'); ?>" class="action-button">
-                    💰 ניהול תשלומים
-                </a>
-                <a href="<?php echo admin_url('admin.php?page=crm-dashboard'); ?>" class="action-button">
-                    ⚙️ ניהול מערכת
-                </a>
+            <a href="<?php echo admin_url('admin.php?page=crm-reports'); ?>" class="action-button" style="background: #2563eb; font-size: 14px; padding: 15px 10px;">
+                📊 דוחות ואנליטיקס
+            </a>
+            <a href="<?php echo admin_url('admin.php?page=payments-management'); ?>" class="action-button" style="background: #4f46e5; font-size: 14px; padding: 15px 10px;">
+                💰 ניהול תשלומים
+            </a>
+        </div>
+    </div>
+
+    <!-- מה חדש השבוע -->
+    <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 40px; border-radius: 20px; margin-top: 40px; box-shadow: 0 10px 30px rgba(0,0,0,0.2);">
+        <h2 style="color: white; text-align: center; margin-bottom: 30px; font-size: 2rem;">☀️ מה חדש השבוע</h2>
+        
+        <!-- נתונים כלליים -->
+        <?php 
+        // חישוב תחילת השבוע לתצוגה
+        $current_day = date('w');
+        if ($current_day == 0) {
+            $week_start_display = date('d/m');
+        } else {
+            $week_start_display = date('d/m', strtotime('-' . $current_day . ' days'));
+        }
+        ?>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 40px;">
+            <div style="text-align: center; background: rgba(255,255,255,0.15); padding: 20px; border-radius: 12px;">
+                <div style="font-size: 2.5rem; font-weight: bold; margin-bottom: 10px;"><?php echo count($weekly_data['new_clients']); ?></div>
+                <div style="font-size: 1rem; opacity: 0.9;">מתאמנות חדשות</div>
+                <div style="font-size: 0.7rem; opacity: 0.7; margin-top: 5px;">
+                    (מ-<?php echo $week_start_display; ?> עד <?php echo date('d/m'); ?>)
+                </div>
+            </div>
+            <div style="text-align: center; background: rgba(255,255,255,0.15); padding: 20px; border-radius: 12px;">
+                <div style="font-size: 2.5rem; font-weight: bold; margin-bottom: 10px;"><?php echo count($weekly_data['new_mentors']); ?></div>
+                <div style="font-size: 1rem; opacity: 0.9;">מנטוריות חדשות</div>
+                <div style="font-size: 0.7rem; opacity: 0.7; margin-top: 5px;">
+                    (מ-<?php echo $week_start_display; ?> עד <?php echo date('d/m'); ?>)
+                </div>
+            </div>
+            <div style="text-align: center; background: rgba(255,255,255,0.15); padding: 20px; border-radius: 12px;">
+                <div style="font-size: 2.5rem; font-weight: bold; margin-bottom: 10px;"><?php echo count($weekly_data['new_groups']); ?></div>
+                <div style="font-size: 1rem; opacity: 0.9;">קבוצות חדשות</div>
+                <div style="font-size: 0.7rem; opacity: 0.7; margin-top: 5px;">
+                    (מ-<?php echo $week_start_display; ?> עד <?php echo date('d/m'); ?>)
+                </div>
+            </div>
+            <div style="text-align: center; background: rgba(255,255,255,0.15); padding: 20px; border-radius: 12px;">
+                <div style="font-size: 2.5rem; font-weight: bold; margin-bottom: 10px;"><?php echo count($weekly_data['updated_payments']); ?></div>
+                <div style="font-size: 1rem; opacity: 0.9;">תשלומים עודכנו</div>
+                <div style="font-size: 0.7rem; opacity: 0.7; margin-top: 5px;">
+                    (מ-<?php echo $week_start_display; ?> עד <?php echo date('d/m'); ?>)
+                </div>
+            </div>
+        </div>
+
+        <!-- פירוט הפעילויות -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 25px;">
+            <!-- מתאמנות שהתחילו השבוע -->
+            <div style="background: rgba(255,255,255,0.1); padding: 20px; border-radius: 15px;">
+                <h4 style="margin: 0 0 15px 0; color: white; font-size: 1.1rem; display: flex; align-items: center; gap: 8px;">
+                    👥 מתאמנות שהתחילו השבוע
+                </h4>
+                <?php if ($weekly_data['new_clients']): ?>
+                    <?php foreach ($weekly_data['new_clients'] as $client): ?>
+                        <div style="font-size: 0.9rem; opacity: 0.9; margin-bottom: 8px; padding: 8px; background: rgba(255,255,255,0.1); border-radius: 8px;">
+                            • <?php echo get_field('first_name', $client->ID) . ' ' . get_field('last_name', $client->ID); ?>
+                            <br><span style="font-size: 0.8rem; opacity: 0.8;">
+                                נוצר: <?php echo date('d/m/Y', strtotime($client->post_date)); ?>
+                                <?php if (get_field('start_date', $client->ID)): ?>
+                                    | התחלה: <?php echo date('d/m/Y', strtotime(get_field('start_date', $client->ID))); ?>
+                                <?php endif; ?>
+                            </span>
+                        </div>
+                    <?php endforeach; ?>
+                <?php else: ?>
+                    <div style="font-size: 0.9rem; opacity: 0.7; font-style: italic;">אין מתאמנות חדשות השבוע</div>
+                <?php endif; ?>
+            </div>
+
+            <!-- קבוצות חדשות שנפתחו השבוע -->
+            <div style="background: rgba(255,255,255,0.1); padding: 20px; border-radius: 15px;">
+                <h4 style="margin: 0 0 15px 0; color: white; font-size: 1.1rem; display: flex; align-items: center; gap: 8px;">
+                    🌟 קבוצות חדשות שנפתחו השבוע
+                </h4>
+                <?php if ($weekly_data['new_groups']): ?>
+                    <?php foreach ($weekly_data['new_groups'] as $group): ?>
+                        <div style="font-size: 0.9rem; opacity: 0.9; margin-bottom: 8px; padding: 8px; background: rgba(255,255,255,0.1); border-radius: 8px;">
+                            • <?php echo get_field('group_name', $group->ID) ?: $group->post_title; ?>
+                            <br><span style="font-size: 0.8rem; opacity: 0.8;">
+                                נוצר: <?php echo date('d/m/Y', strtotime($group->post_date)); ?>
+                                <?php if (get_field('group_start_date', $group->ID)): ?>
+                                    | התחלה: <?php echo date('d/m/Y', strtotime(get_field('group_start_date', $group->ID))); ?>
+                                <?php endif; ?>
+                            </span>
+                        </div>
+                    <?php endforeach; ?>
+                <?php else: ?>
+                    <div style="font-size: 0.9rem; opacity: 0.7; font-style: italic;">אין קבוצות חדשות השבוע</div>
+                <?php endif; ?>
+            </div>
+
+            <!-- תשלומים שהתעדכנו השבוע -->
+            <div style="background: rgba(255,255,255,0.1); padding: 20px; border-radius: 15px;">
+                <h4 style="margin: 0 0 15px 0; color: white; font-size: 1.1rem; display: flex; align-items: center; gap: 8px;">
+                    💰 תשלומים שהתעדכנו השבוע
+                </h4>
+                <?php if ($weekly_data['updated_payments']): ?>
+                    <?php foreach ($weekly_data['updated_payments'] as $client): ?>
+                        <div style="font-size: 0.9rem; opacity: 0.9; margin-bottom: 8px; padding: 8px; background: rgba(255,255,255,0.1); border-radius: 8px;">
+                            • <?php echo get_field('first_name', $client->ID) . ' ' . get_field('last_name', $client->ID); ?> - 
+                            ₪<?php echo number_format(get_field('amount_paid', $client->ID)); ?>
+                            <br><span style="font-size: 0.8rem; opacity: 0.8;">
+                                עודכן: <?php echo date('d/m/Y', strtotime($client->post_modified)); ?>
+                                <?php if (get_field('payment_date', $client->ID)): ?>
+                                    | תשלום: <?php echo date('d/m/Y', strtotime(get_field('payment_date', $client->ID))); ?>
+                                <?php endif; ?>
+                            </span>
+                        </div>
+                    <?php endforeach; ?>
+                <?php else: ?>
+                    <div style="font-size: 0.9rem; opacity: 0.7; font-style: italic;">אין תשלומים שהתעדכנו השבוע</div>
+                <?php endif; ?>
+            </div>
+
+            <!-- מנטוריות חדשות -->
+            <?php if ($weekly_data['new_mentors']): ?>
+            <div style="background: rgba(255,255,255,0.1); padding: 20px; border-radius: 15px;">
+                <h4 style="margin: 0 0 15px 0; color: white; font-size: 1.1rem; display: flex; align-items: center; gap: 8px;">
+                    👩‍💼 מנטוריות חדשות השבוע
+                </h4>
+                <?php foreach ($weekly_data['new_mentors'] as $mentor): ?>
+                    <div style="font-size: 0.9rem; opacity: 0.9; margin-bottom: 8px; padding: 8px; background: rgba(255,255,255,0.1); border-radius: 8px;">
+                        • <?php echo get_field('mentor_first_name', $mentor->ID) . ' ' . get_field('mentor_last_name', $mentor->ID); ?> 
+                        (<?php echo date('d/m', strtotime($mentor->post_date)); ?>)
+                    </div>
+                <?php endforeach; ?>
+            </div>
             <?php endif; ?>
         </div>
     </div>
