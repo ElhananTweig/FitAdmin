@@ -1206,6 +1206,250 @@ add_action('admin_init', 'add_crm_capabilities');
 // טעינת קובץ נתוני הדמו
 require_once get_template_directory() . '/sample-data.php';
 
+// הוספת סקריפטים ועיצובים לפופ-אפ מתאמנות
+function enqueue_client_modal_assets() {
+    // טעינה בכל הפורנט (פרט לעמודי הבלוגים)
+    if (!is_admin()) {
+        wp_enqueue_style('client-modal-css', 
+            get_template_directory_uri() . '/assets/css/client-modal.css',
+            array(), 
+            '1.0.0'
+        );
+        
+        wp_enqueue_script('client-modal-js', 
+            get_template_directory_uri() . '/assets/js/client-modal.js',
+            array(), 
+            '1.0.0', 
+            true
+        );
+        
+        // הוספת משתנה ajaxurl לג'אווהסקריפט
+        wp_localize_script('client-modal-js', 'ajax_object', array(
+            'ajax_url' => admin_url('admin-ajax.php'),
+            'nonce' => wp_create_nonce('client_action')
+        ));
+    }
+}
+add_action('wp_enqueue_scripts', 'enqueue_client_modal_assets');
+
+// הוספת הפופ-אפ לכל עמוד
+function include_client_modal() {
+    if (!is_admin()) {
+        include get_template_directory() . '/client-popup-modal.php';
+    }
+}
+add_action('wp_footer', 'include_client_modal');
+
+// טיפול ב-AJAX לקבלת נתוני מתאמנת
+function get_client_data_ajax() {
+    check_ajax_referer('client_action', 'nonce');
+    
+    $client_id = intval($_POST['client_id']);
+    
+    if (!$client_id) {
+        wp_send_json_error(array('message' => 'מזהה מתאמנת לא חוקי'));
+    }
+    
+    $client_post = get_post($client_id);
+    if (!$client_post || $client_post->post_type !== 'clients') {
+        wp_send_json_error(array('message' => 'מתאמנת לא נמצאה'));
+    }
+    
+    $client_data = array(
+        'first_name' => get_field('first_name', $client_id),
+        'last_name' => get_field('last_name', $client_id),
+        'phone' => get_field('phone', $client_id),
+        'email' => get_field('email', $client_id),
+        'age' => get_field('age', $client_id),
+        'start_date' => get_field('start_date', $client_id),
+        'end_date' => get_field('end_date', $client_id),
+        'referral_source' => get_field('referral_source', $client_id),
+        'payment_amount' => get_field('payment_amount', $client_id),
+        'amount_paid' => get_field('amount_paid', $client_id),
+        'payment_method' => get_field('payment_method', $client_id),
+        'payment_date' => get_field('payment_date', $client_id),
+        'start_weight' => get_field('start_weight', $client_id),
+        'current_weight' => get_field('current_weight', $client_id),
+        'target_weight' => get_field('target_weight', $client_id),
+        'training_type' => get_field('training_type', $client_id),
+        'notes' => get_field('notes', $client_id)
+    );
+    
+    // טיפול במנטורית
+    $mentor = get_field('mentor', $client_id);
+    if (is_object($mentor)) {
+        $client_data['mentor_id'] = $mentor->ID;
+    } else {
+        $client_data['mentor_id'] = $mentor;
+    }
+    
+    // טיפול בקבוצה
+    $group = get_field('group_id', $client_id);
+    if (is_object($group)) {
+        $client_data['group_id'] = $group->ID;
+    } else {
+        $client_data['group_id'] = $group;
+    }
+    
+    wp_send_json_success($client_data);
+}
+add_action('wp_ajax_get_client_data_ajax', 'get_client_data_ajax');
+add_action('wp_ajax_nopriv_get_client_data_ajax', 'get_client_data_ajax');
+
+// טיפול ב-AJAX להוספת מתאמנת
+function add_client_ajax() {
+    check_ajax_referer('client_action', 'client_nonce');
+    
+    // קבלת הנתונים מהטופס
+    $first_name = sanitize_text_field($_POST['first_name']);
+    $last_name = sanitize_text_field($_POST['last_name']);
+    $phone = sanitize_text_field($_POST['phone']);
+    $email = sanitize_email($_POST['email']);
+    $age = intval($_POST['age']);
+    $start_date = sanitize_text_field($_POST['start_date']);
+    $end_date = sanitize_text_field($_POST['end_date']);
+    $referral_source = sanitize_text_field($_POST['referral_source']);
+    $payment_amount = floatval($_POST['payment_amount']);
+    $amount_paid = floatval($_POST['amount_paid']);
+    $payment_method = sanitize_text_field($_POST['payment_method']);
+    $payment_date = sanitize_text_field($_POST['payment_date']);
+    $start_weight = floatval($_POST['start_weight']);
+    $current_weight = floatval($_POST['current_weight']);
+    $target_weight = floatval($_POST['target_weight']);
+    $training_type = sanitize_text_field($_POST['training_type']);
+    $mentor_id = intval($_POST['mentor_id']);
+    $group_id = intval($_POST['group_id']);
+    $notes = sanitize_textarea_field($_POST['notes']);
+    
+    // בדיקת שדות חובה
+    if (empty($first_name) || empty($last_name) || empty($phone) || empty($start_date) || empty($end_date) || empty($referral_source)) {
+        wp_send_json_error(array('message' => 'אנא מלא את כל השדות החובה'));
+    }
+    
+    // יצירת הפוסט
+    $post_data = array(
+        'post_title' => $first_name . ' ' . $last_name,
+        'post_type' => 'clients',
+        'post_status' => 'publish'
+    );
+    
+    $post_id = wp_insert_post($post_data);
+    
+    if ($post_id && !is_wp_error($post_id)) {
+        // הוספת שדות מותאמים
+        update_field('first_name', $first_name, $post_id);
+        update_field('last_name', $last_name, $post_id);
+        update_field('phone', $phone, $post_id);
+        update_field('email', $email, $post_id);
+        update_field('age', $age, $post_id);
+        update_field('start_date', $start_date, $post_id);
+        update_field('end_date', $end_date, $post_id);
+        update_field('referral_source', $referral_source, $post_id);
+        update_field('payment_amount', $payment_amount, $post_id);
+        update_field('amount_paid', $amount_paid, $post_id);
+        if ($payment_method) update_field('payment_method', $payment_method, $post_id);
+        if ($payment_date) update_field('payment_date', $payment_date, $post_id);
+        update_field('start_weight', $start_weight, $post_id);
+        if ($current_weight) update_field('current_weight', $current_weight, $post_id);
+        update_field('target_weight', $target_weight, $post_id);
+        update_field('training_type', $training_type, $post_id);
+        if ($training_type === 'personal' && $mentor_id) {
+            update_field('mentor', $mentor_id, $post_id);
+        } elseif ($training_type === 'group' && $group_id) {
+            update_field('group_id', $group_id, $post_id);
+        }
+        update_field('notes', $notes, $post_id);
+        
+        wp_send_json_success(array('message' => 'המתאמנת נוספה בהצלחה!', 'post_id' => $post_id));
+    } else {
+        wp_send_json_error(array('message' => 'שגיאה ביצירת המתאמנת'));
+    }
+}
+add_action('wp_ajax_add_client_ajax', 'add_client_ajax');
+add_action('wp_ajax_nopriv_add_client_ajax', 'add_client_ajax');
+
+// טיפול ב-AJAX לעריכת מתאמנת
+function edit_client_ajax() {
+    check_ajax_referer('client_action', 'client_nonce');
+    
+    $client_id = intval($_POST['client_id']);
+    
+    if (!$client_id) {
+        wp_send_json_error(array('message' => 'מזהה מתאמנת לא חוקי'));
+    }
+    
+    // קבלת הנתונים מהטופס
+    $first_name = sanitize_text_field($_POST['first_name']);
+    $last_name = sanitize_text_field($_POST['last_name']);
+    $phone = sanitize_text_field($_POST['phone']);
+    $email = sanitize_email($_POST['email']);
+    $age = intval($_POST['age']);
+    $start_date = sanitize_text_field($_POST['start_date']);
+    $end_date = sanitize_text_field($_POST['end_date']);
+    $referral_source = sanitize_text_field($_POST['referral_source']);
+    $payment_amount = floatval($_POST['payment_amount']);
+    $amount_paid = floatval($_POST['amount_paid']);
+    $payment_method = sanitize_text_field($_POST['payment_method']);
+    $payment_date = sanitize_text_field($_POST['payment_date']);
+    $start_weight = floatval($_POST['start_weight']);
+    $current_weight = floatval($_POST['current_weight']);
+    $target_weight = floatval($_POST['target_weight']);
+    $training_type = sanitize_text_field($_POST['training_type']);
+    $mentor_id = intval($_POST['mentor_id']);
+    $group_id = intval($_POST['group_id']);
+    $notes = sanitize_textarea_field($_POST['notes']);
+    
+    // בדיקת שדות חובה
+    if (empty($first_name) || empty($last_name) || empty($phone) || empty($start_date) || empty($end_date) || empty($referral_source)) {
+        wp_send_json_error(array('message' => 'אנא מלא את כל השדות החובה'));
+    }
+    
+    // עדכון הפוסט
+    $post_data = array(
+        'ID' => $client_id,
+        'post_title' => $first_name . ' ' . $last_name
+    );
+    
+    $updated = wp_update_post($post_data);
+    
+    if ($updated && !is_wp_error($updated)) {
+        // עדכון שדות מותאמים
+        update_field('first_name', $first_name, $client_id);
+        update_field('last_name', $last_name, $client_id);
+        update_field('phone', $phone, $client_id);
+        update_field('email', $email, $client_id);
+        update_field('age', $age, $client_id);
+        update_field('start_date', $start_date, $client_id);
+        update_field('end_date', $end_date, $client_id);
+        update_field('referral_source', $referral_source, $client_id);
+        update_field('payment_amount', $payment_amount, $client_id);
+        update_field('amount_paid', $amount_paid, $client_id);
+        if ($payment_method) update_field('payment_method', $payment_method, $client_id);
+        if ($payment_date) update_field('payment_date', $payment_date, $client_id);
+        update_field('start_weight', $start_weight, $client_id);
+        if ($current_weight) update_field('current_weight', $current_weight, $client_id);
+        update_field('target_weight', $target_weight, $client_id);
+        update_field('training_type', $training_type, $client_id);
+        
+        // ניקוי שדות מנטורית/קבוצה
+        update_field('mentor', null, $client_id);
+        update_field('group_id', null, $client_id);
+        
+        if ($training_type === 'personal' && $mentor_id) {
+            update_field('mentor', $mentor_id, $client_id);
+        } elseif ($training_type === 'group' && $group_id) {
+            update_field('group_id', $group_id, $client_id);
+        }
+        update_field('notes', $notes, $client_id);
+        
+        wp_send_json_success(array('message' => 'המתאמנת עודכנה בהצלחה!'));
+    } else {
+        wp_send_json_error(array('message' => 'שגיאה בעדכון המתאמנת'));
+    }
+}
+add_action('wp_ajax_edit_client_ajax', 'edit_client_ajax');
+add_action('wp_ajax_nopriv_edit_client_ajax', 'edit_client_ajax');
+
 // פונקציה לטופס הוספת מתאמנת
 function add_client_form_page() {
     include(get_template_directory() . '/add-client-form.php');
@@ -1900,6 +2144,128 @@ function show_welcome_message() {
     }
 }
 add_action('wp_footer', 'show_welcome_message');
+
+// ===== פונקציות AJAX למנטוריות =====
+
+// טיפול ב-AJAX לקבלת נתוני מנטורית
+function get_mentor_data_ajax() {
+    check_ajax_referer('client_action', 'nonce');
+    
+    $mentor_id = intval($_POST['mentor_id']);
+    
+    if (!$mentor_id) {
+        wp_send_json_error(array('message' => 'מזהה מנטורית לא חוקי'));
+    }
+    
+    $mentor_post = get_post($mentor_id);
+    if (!$mentor_post || $mentor_post->post_type !== 'mentors') {
+        wp_send_json_error(array('message' => 'מנטורית לא נמצאה'));
+    }
+    
+    $mentor_data = array(
+        'mentor_first_name' => get_field('mentor_first_name', $mentor_id),
+        'mentor_last_name' => get_field('mentor_last_name', $mentor_id),
+        'mentor_phone' => get_field('mentor_phone', $mentor_id),
+        'mentor_email' => get_field('mentor_email', $mentor_id),
+        'payment_percentage' => get_field('payment_percentage', $mentor_id),
+        'mentor_notes' => get_field('mentor_notes', $mentor_id)
+    );
+    
+    wp_send_json_success($mentor_data);
+}
+add_action('wp_ajax_get_mentor_data_ajax', 'get_mentor_data_ajax');
+add_action('wp_ajax_nopriv_get_mentor_data_ajax', 'get_mentor_data_ajax');
+
+// טיפול ב-AJAX להוספת מנטורית
+function add_mentor_ajax() {
+    check_ajax_referer('client_action', 'mentor_nonce');
+    
+    // קבלת הנתונים מהטופס
+    $first_name = sanitize_text_field($_POST['mentor_first_name']);
+    $last_name = sanitize_text_field($_POST['mentor_last_name']);
+    $phone = sanitize_text_field($_POST['mentor_phone']);
+    $email = sanitize_email($_POST['mentor_email']);
+    $payment_percentage = floatval($_POST['payment_percentage']);
+    $notes = sanitize_textarea_field($_POST['mentor_notes']);
+    
+    // בדיקת שדות חובה
+    if (empty($first_name) || empty($last_name) || empty($phone)) {
+        wp_send_json_error(array('message' => 'אנא מלא את כל השדות החובה'));
+    }
+    
+    // יצירת הפוסט
+    $post_data = array(
+        'post_title' => $first_name . ' ' . $last_name,
+        'post_type' => 'mentors',
+        'post_status' => 'publish'
+    );
+    
+    $post_id = wp_insert_post($post_data);
+    
+    if ($post_id && !is_wp_error($post_id)) {
+        // הוספת שדות מותאמים
+        update_field('mentor_first_name', $first_name, $post_id);
+        update_field('mentor_last_name', $last_name, $post_id);
+        update_field('mentor_phone', $phone, $post_id);
+        if ($email) update_field('mentor_email', $email, $post_id);
+        update_field('payment_percentage', $payment_percentage ?: 40, $post_id);
+        if ($notes) update_field('mentor_notes', $notes, $post_id);
+        
+        wp_send_json_success(array('message' => 'המנטורית נוספה בהצלחה!', 'post_id' => $post_id));
+    } else {
+        wp_send_json_error(array('message' => 'שגיאה ביצירת המנטורית'));
+    }
+}
+add_action('wp_ajax_add_mentor_ajax', 'add_mentor_ajax');
+add_action('wp_ajax_nopriv_add_mentor_ajax', 'add_mentor_ajax');
+
+// טיפול ב-AJAX לעריכת מנטורית
+function edit_mentor_ajax() {
+    check_ajax_referer('client_action', 'mentor_nonce');
+    
+    $mentor_id = intval($_POST['mentor_id']);
+    
+    if (!$mentor_id) {
+        wp_send_json_error(array('message' => 'מזהה מנטורית לא חוקי'));
+    }
+    
+    // קבלת הנתונים מהטופס
+    $first_name = sanitize_text_field($_POST['mentor_first_name']);
+    $last_name = sanitize_text_field($_POST['mentor_last_name']);
+    $phone = sanitize_text_field($_POST['mentor_phone']);
+    $email = sanitize_email($_POST['mentor_email']);
+    $payment_percentage = floatval($_POST['payment_percentage']);
+    $notes = sanitize_textarea_field($_POST['mentor_notes']);
+    
+    // בדיקת שדות חובה
+    if (empty($first_name) || empty($last_name) || empty($phone)) {
+        wp_send_json_error(array('message' => 'אנא מלא את כל השדות החובה'));
+    }
+    
+    // עדכון הפוסט
+    $post_data = array(
+        'ID' => $mentor_id,
+        'post_title' => $first_name . ' ' . $last_name
+    );
+    
+    $result = wp_update_post($post_data);
+    
+    if ($result && !is_wp_error($result)) {
+        // עדכון שדות מותאמים
+        update_field('mentor_first_name', $first_name, $mentor_id);
+        update_field('mentor_last_name', $last_name, $mentor_id);
+        update_field('mentor_phone', $phone, $mentor_id);
+        update_field('mentor_email', $email, $mentor_id);
+        update_field('payment_percentage', $payment_percentage ?: 40, $mentor_id);
+        update_field('mentor_notes', $notes, $mentor_id);
+        
+        wp_send_json_success(array('message' => 'המנטורית עודכנה בהצלחה!'));
+    } else {
+        wp_send_json_error(array('message' => 'שגיאה בעדכון המנטורית'));
+    }
+}
+add_action('wp_ajax_edit_mentor_ajax', 'edit_mentor_ajax');
+add_action('wp_ajax_nopriv_edit_mentor_ajax', 'edit_mentor_ajax');
 
 
 

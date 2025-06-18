@@ -320,15 +320,15 @@ $frozen_clients = get_frozen_clients();
         <div class="crm-section">
             <h3>⚡ פעולות מהירות</h3>
             <div class="quick-actions">
-                <a href="<?php echo admin_url('admin.php?page=add-client-form'); ?>" class="quick-action-btn">
+                <button type="button" onclick="openAddClientModal()" class="quick-action-btn">
                     ➕ הוסף מתאמנת חדשה
-                </a>
+                </button>
                 <a href="<?php echo admin_url('edit.php?post_type=clients'); ?>" class="quick-action-btn secondary">
                     👥 צפה בכל המתאמנות
                 </a>
-                <a href="<?php echo admin_url('admin.php?page=add-mentor-form'); ?>" class="quick-action-btn secondary">
+                <button type="button" onclick="openAddMentorModal()" class="quick-action-btn secondary">
                     👩‍💼 הוסף מנטורית
-                </a>
+                </button>
                 <a href="<?php echo admin_url('admin.php?page=payments-management'); ?>" class="quick-action-btn secondary">
                     💰 ניהול תשלומים
                 </a>

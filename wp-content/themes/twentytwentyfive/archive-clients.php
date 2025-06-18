@@ -536,9 +536,9 @@ get_header(); ?>
                     <?php endif; ?>
                     
                     <div class="client-actions">
-                        <a href="<?php echo admin_url('admin.php?page=add-client-form&edit=' . $client_id); ?>" class="action-btn primary">
+                        <button type="button" onclick="openEditClientModal(<?php echo $client_id; ?>)" class="action-btn primary">
                             ✏️ ערוך
-                        </a>
+                        </button>
                         <a href="tel:<?php echo $phone; ?>" class="action-btn secondary">
                             📞 התקשר
                         </a>

@@ -996,12 +996,12 @@ get_header(); ?>
             🚀 פעולות מהירות
         </h3>
         <div class="quick-actions" style="grid-template-columns: repeat(5, 1fr); gap: 15px;">
-            <a href="<?php echo admin_url('admin.php?page=add-client-form'); ?>" class="action-button" style="background: #059669; font-size: 14px; padding: 15px 10px;">
+            <button type="button" onclick="openAddClientModal()" class="action-button" style="background: #059669; font-size: 14px; padding: 15px 10px; border: none; cursor: pointer; color: white; text-decoration: none; border-radius: 8px; font-weight: bold;">
                 👥 הוסף מתאמנת חדשה
-            </a>
-            <a href="<?php echo admin_url('admin.php?page=add-mentor-form'); ?>" class="action-button" style="background: #0d9488; font-size: 14px; padding: 15px 10px;">
+            </button>
+            <button type="button" onclick="openAddMentorModal()" class="action-button" style="background: #0d9488; font-size: 14px; padding: 15px 10px; border: none; cursor: pointer; color: white; text-decoration: none; border-radius: 8px; font-weight: 600; transition: all 0.3s;">
                 📝 הוסף מנטורית חדשה
-            </a>
+            </button>
             <a href="<?php echo admin_url('admin.php?page=add-group-form'); ?>" class="action-button" style="background: #0891b2; font-size: 14px; padding: 15px 10px;">
                 ✨ צור קבוצה חדשה
             </a>

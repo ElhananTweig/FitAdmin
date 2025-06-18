@@ -1,0 +1,595 @@
+/**
+ * פופ-אפ מתאמנות - JavaScript
+ */
+
+class ClientModal {
+    constructor() {
+        this.modal = null;
+        this.isEdit = false;
+        this.currentClientId = null;
+        this.init();
+    }
+
+    init() {
+        // חיכה לטעינת הדף
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', () => this.setupEventListeners());
+        } else {
+            this.setupEventListeners();
+        }
+    }
+
+    setupEventListeners() {
+        this.modal = document.getElementById('client-modal');
+        if (!this.modal) return;
+
+        const modalClose = document.getElementById('modal-close');
+        const modalBackdrop = document.getElementById('modal-backdrop');
+        const cancelBtn = document.getElementById('cancel-btn');
+        const clientForm = document.getElementById('client-form');
+
+        // אירועי סגירה
+        if (modalClose) modalClose.addEventListener('click', () => this.closeModal());
+        if (modalBackdrop) modalBackdrop.addEventListener('click', () => this.closeModal());
+        if (cancelBtn) cancelBtn.addEventListener('click', () => this.closeModal());
+
+        // סגירה ב-ESC
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && this.modal.style.display === 'block') {
+                this.closeModal();
+            }
+        });
+
+        // שליחת טופס
+        if (clientForm) {
+            clientForm.addEventListener('submit', (e) => this.handleFormSubmit(e));
+        }
+
+        // החלפה בין ליווי אישי לקבוצתי
+        const trainingType = document.getElementById('training_type');
+        if (trainingType) {
+            trainingType.addEventListener('change', () => this.toggleTrainingType());
+        }
+
+        // הצגת פרטי תשלום
+        const amountPaid = document.getElementById('amount_paid');
+        if (amountPaid) {
+            amountPaid.addEventListener('input', () => this.togglePaymentDetails());
+        }
+
+        // העתקת משקל התחלתי למשקל נוכחי
+        const startWeight = document.getElementById('start_weight');
+        if (startWeight) {
+            startWeight.addEventListener('input', () => this.copyStartWeight());
+        }
+
+        // אפקטים ויזואליים
+        this.setupFormEffects();
+
+        // הוספת פונקציה גלובלית לפתיחת הפופ-אפ
+        window.openClientModal = (isEdit = false, clientId = null) => {
+            this.openModal(isEdit, clientId);
+        };
+    }
+
+    setupFormEffects() {
+        const formInputs = this.modal.querySelectorAll('input, select, textarea');
+        formInputs.forEach(input => {
+            input.addEventListener('focus', function() {
+                this.style.borderColor = '#3b82f6';
+                this.style.boxShadow = '0 0 0 3px rgba(59, 130, 246, 0.1)';
+            });
+
+            input.addEventListener('blur', function() {
+                if (!this.matches(':invalid')) {
+                    this.style.borderColor = '#e5e7eb';
+                    this.style.boxShadow = 'none';
+                }
+            });
+        });
+    }
+
+    openModal(isEdit = false, clientId = null) {
+        this.isEdit = isEdit;
+        this.currentClientId = clientId;
+
+        const modalTitle = document.getElementById('modal-title');
+        const saveBtn = document.getElementById('save-btn');
+
+        if (isEdit && clientId) {
+            modalTitle.textContent = '✏️ עריכת מתאמנת';
+            saveBtn.textContent = '💾 עדכן מתאמנת';
+            document.getElementById('form-action').value = 'edit_client';
+            document.getElementById('client-id').value = clientId;
+            this.loadClientData(clientId);
+        } else {
+            modalTitle.textContent = '👥 הוספת מתאמנת חדשה';
+            saveBtn.textContent = '✅ שמור מתאמנת';
+            document.getElementById('form-action').value = 'add_client';
+            document.getElementById('client-id').value = '';
+            this.resetForm();
+            this.setDefaultValues();
+        }
+
+        this.modal.style.display = 'block';
+        document.body.style.overflow = 'hidden';
+    }
+
+    closeModal() {
+        this.modal.style.display = 'none';
+        document.body.style.overflow = '';
+        this.resetForm();
+    }
+
+    resetForm() {
+        const clientForm = document.getElementById('client-form');
+        clientForm.reset();
+        
+        document.getElementById('payment-details').style.display = 'none';
+        document.getElementById('personal-mentor').style.display = 'block';
+        document.getElementById('group-selection').style.display = 'none';
+        document.getElementById('group_id').required = false;
+
+        // הסרת הודעות
+        this.removeAllAlerts();
+    }
+
+    setDefaultValues() {
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('start_date').value = today;
+        document.getElementById('training_type').value = 'personal';
+        document.getElementById('amount_paid').value = '0';
+    }
+
+    async loadClientData(clientId) {
+        try {
+            this.showAlert('info', 'טוען נתוני מתאמנת...');
+
+            const formData = new FormData();
+            formData.append('action', 'get_client_data_ajax');
+            formData.append('client_id', clientId);
+            formData.append('nonce', document.getElementById('form-nonce').value);
+
+            const ajaxUrl = (typeof ajax_object !== 'undefined' && ajax_object.ajax_url) ? 
+                           ajax_object.ajax_url : '/wp-admin/admin-ajax.php';
+
+            const response = await fetch(ajaxUrl, {
+                method: 'POST',
+                body: formData
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                this.populateForm(data.data);
+                this.removeAlert('info');
+            } else {
+                this.showAlert('error', 'שגיאה בטעינת נתוני המתאמנת');
+            }
+        } catch (error) {
+            console.error('שגיאה:', error);
+            this.showAlert('error', 'שגיאה בחיבור לשרת');
+        }
+    }
+
+    populateForm(clientData) {
+        // מילוי השדות הבסיסיים
+        Object.keys(clientData).forEach(key => {
+            const field = document.getElementById(key);
+            if (field && clientData[key] !== null && clientData[key] !== undefined) {
+                field.value = clientData[key];
+            }
+        });
+
+        // טיפול בשדות מיוחדים
+        if (clientData.training_type === 'group') {
+            document.getElementById('training_type').value = 'group';
+            this.toggleTrainingType();
+        }
+
+        if (parseFloat(clientData.amount_paid || 0) > 0) {
+            this.togglePaymentDetails();
+        }
+    }
+
+    async handleFormSubmit(e) {
+        e.preventDefault();
+
+        if (!this.validateForm()) {
+            return;
+        }
+
+        const saveBtn = document.getElementById('save-btn');
+        saveBtn.classList.add('loading');
+        saveBtn.disabled = true;
+
+        try {
+            const formData = new FormData(e.target);
+            
+            // הוספת action מותאם
+            if (this.isEdit) {
+                formData.set('action', 'edit_client_ajax');
+            } else {
+                formData.set('action', 'add_client_ajax');
+            }
+
+            const ajaxUrl = (typeof ajax_object !== 'undefined' && ajax_object.ajax_url) ? 
+                           ajax_object.ajax_url : '/wp-admin/admin-ajax.php';
+
+            const response = await fetch(ajaxUrl, {
+                method: 'POST',
+                body: formData
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                this.showAlert('success', data.data.message || 'המתאמנת נשמרה בהצלחה!');
+
+                setTimeout(() => {
+                    this.closeModal();
+                    // רענון הדף או עדכון הרשימה
+                    if (typeof updateClientsList === 'function') {
+                        updateClientsList();
+                    } else {
+                        window.location.reload();
+                    }
+                }, 2000);
+            } else {
+                this.showAlert('error', data.data?.message || 'אירעה שגיאה בשמירה');
+            }
+        } catch (error) {
+            console.error('שגיאה:', error);
+            this.showAlert('error', 'שגיאה בחיבור לשרת');
+        } finally {
+            saveBtn.classList.remove('loading');
+            saveBtn.disabled = false;
+        }
+    }
+
+    validateForm() {
+        const form = document.getElementById('client-form');
+        const requiredFields = form.querySelectorAll('[required]');
+        let isValid = true;
+
+        requiredFields.forEach(field => {
+            if (!field.value.trim()) {
+                field.style.borderColor = '#dc2626';
+                isValid = false;
+            } else {
+                field.style.borderColor = '#e5e7eb';
+            }
+        });
+
+        // בדיקת ולידציות מיוחדות
+        const trainingType = document.getElementById('training_type').value;
+        if (trainingType === 'group') {
+            const groupId = document.getElementById('group_id');
+            if (!groupId.value) {
+                groupId.style.borderColor = '#dc2626';
+                isValid = false;
+            }
+        }
+
+        if (!isValid) {
+            this.showAlert('error', 'אנא מלא את כל השדות הנדרשים');
+        }
+
+        return isValid;
+    }
+
+    toggleTrainingType() {
+        const trainingType = document.getElementById('training_type').value;
+        const personalMentor = document.getElementById('personal-mentor');
+        const groupSelection = document.getElementById('group-selection');
+        const groupSelect = document.getElementById('group_id');
+        const mentorSelect = document.getElementById('mentor_id');
+
+        if (trainingType === 'group') {
+            personalMentor.style.display = 'none';
+            groupSelection.style.display = 'block';
+            groupSelect.required = true;
+            mentorSelect.required = false;
+            mentorSelect.value = '';
+        } else {
+            personalMentor.style.display = 'block';
+            groupSelection.style.display = 'none';
+            groupSelect.required = false;
+            mentorSelect.required = false;
+            groupSelect.value = '';
+        }
+    }
+
+    togglePaymentDetails() {
+        const amountPaid = parseFloat(document.getElementById('amount_paid').value) || 0;
+        const paymentDetails = document.getElementById('payment-details');
+
+        if (amountPaid > 0) {
+            paymentDetails.style.display = 'block';
+            // הגדרת תאריך ברירת מחדל
+            const paymentDate = document.getElementById('payment_date');
+            if (!paymentDate.value) {
+                paymentDate.value = new Date().toISOString().split('T')[0];
+            }
+        } else {
+            paymentDetails.style.display = 'none';
+        }
+    }
+
+    copyStartWeight() {
+        const startWeight = document.getElementById('start_weight');
+        const currentWeight = document.getElementById('current_weight');
+        
+        if (startWeight.value && !currentWeight.value) {
+            currentWeight.value = startWeight.value;
+        }
+    }
+
+    showAlert(type, message) {
+        this.removeAlert(type);
+
+        const alert = document.createElement('div');
+        alert.className = `alert alert-${type}`;
+        
+        const icon = type === 'success' ? '✅' : type === 'error' ? '❌' : 'ℹ️';
+        alert.innerHTML = `
+            <span>${icon}</span>
+            <span>${message}</span>
+        `;
+
+        const modalBody = document.querySelector('.modal-body');
+        modalBody.insertBefore(alert, modalBody.firstChild);
+
+        // גלילה לראש הפופ-אפ
+        modalBody.scrollTop = 0;
+    }
+
+    removeAlert(type) {
+        const existingAlert = this.modal.querySelector(`.alert-${type}`);
+        if (existingAlert) {
+            existingAlert.remove();
+        }
+    }
+
+    removeAllAlerts() {
+        const alerts = this.modal.querySelectorAll('.alert');
+        alerts.forEach(alert => alert.remove());
+    }
+}
+
+// אתחול המחלקה
+let clientModalInstance;
+
+// אתחול כשהדף נטען
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+        clientModalInstance = new ClientModal();
+    });
+} else {
+    clientModalInstance = new ClientModal();
+}
+
+// פונקציות עזר גלובליות
+window.openAddClientModal = function() {
+    if (window.openClientModal) {
+        window.openClientModal(false);
+    }
+};
+
+window.openEditClientModal = function(clientId) {
+    if (window.openClientModal) {
+        window.openClientModal(true, clientId);
+    }
+};
+
+// ===== פונקציות פופאפ מנטוריות =====
+
+// פתיחת מודל הוספת מנטורית
+function openAddMentorModal() {
+    const modal = document.getElementById('mentor-modal');
+    const title = document.getElementById('mentorModalTitle');
+    const form = document.getElementById('mentorForm');
+    const submitBtn = document.getElementById('mentor-save-btn');
+    
+    title.textContent = '👩‍💼 הוספת מנטורית חדשה';
+    submitBtn.textContent = '✅ שמור מנטורית';
+    
+    // איפוס הטופס
+    form.reset();
+    document.getElementById('mentorFormType').value = 'add_mentor_ajax';
+    document.getElementById('mentorId').value = '';
+    document.getElementById('paymentPercentage').value = '40';
+    
+    // הסתרת הודעות
+    document.getElementById('mentorModalMessage').style.display = 'none';
+    
+    // פתיחת המודל עם האפקט הנכון
+    modal.style.display = 'block';
+    document.body.classList.add('modal-open');
+    setTimeout(() => modal.classList.add('active'), 10);
+    
+    // פוקוס על השדה הראשון
+    document.getElementById('mentorFirstName').focus();
+}
+
+// פתיחת מודל עריכת מנטורית
+function openEditMentorModal(mentorId) {
+    const modal = document.getElementById('mentor-modal');
+    const title = document.getElementById('mentorModalTitle');
+    const form = document.getElementById('mentorForm');
+    const submitBtn = document.getElementById('mentor-save-btn');
+    
+    title.textContent = '✏️ עריכת מנטורית';
+    submitBtn.textContent = '💾 עדכן מנטורית';
+    
+    // איפוס הטופס
+    form.reset();
+    document.getElementById('mentorFormType').value = 'edit_mentor_ajax';
+    document.getElementById('mentorId').value = mentorId;
+    
+    // הסתרת הודעות
+    document.getElementById('mentorModalMessage').style.display = 'none';
+    
+    // פתיחת המודל עם האפקט הנכון
+    modal.style.display = 'block';
+    document.body.classList.add('modal-open');
+    setTimeout(() => modal.classList.add('active'), 10);
+    
+    // טעינת נתוני המנטורית
+    loadMentorData(mentorId);
+}
+
+// סגירת מודל מנטורית
+function closeMentorModal() {
+    const modal = document.getElementById('mentor-modal');
+    modal.classList.remove('active');
+    document.body.classList.remove('modal-open');
+    setTimeout(() => {
+        modal.style.display = 'none';
+        document.getElementById('mentorForm').reset();
+    }, 300);
+}
+
+// טעינת נתוני מנטורית
+async function loadMentorData(mentorId) {
+    try {
+        showMentorLoading(true);
+        
+        const formData = new FormData();
+        formData.append('action', 'get_mentor_data_ajax');
+        formData.append('mentor_id', mentorId);
+        formData.append('nonce', ajax_object.nonce);
+        
+        const response = await fetch(ajax_object.ajax_url, {
+            method: 'POST',
+            body: formData
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            const data = result.data;
+            
+            // מילוי השדות
+            document.getElementById('mentorFirstName').value = data.mentor_first_name || '';
+            document.getElementById('mentorLastName').value = data.mentor_last_name || '';
+            document.getElementById('mentorPhone').value = data.mentor_phone || '';
+            document.getElementById('mentorEmail').value = data.mentor_email || '';
+            document.getElementById('paymentPercentage').value = data.payment_percentage || '40';
+            document.getElementById('mentorNotes').value = data.mentor_notes || '';
+            
+            document.getElementById('mentorFirstName').focus();
+        } else {
+            showMentorMessage('שגיאה בטעינת נתוני המנטורית: ' + (result.data.message || 'שגיאה לא ידועה'), 'error');
+        }
+    } catch (error) {
+        console.error('Error loading mentor data:', error);
+        showMentorMessage('שגיאה בטעינת נתוני המנטורית', 'error');
+    } finally {
+        showMentorLoading(false);
+    }
+}
+
+// הצגת/הסתרת טעינה למנטורית
+function showMentorLoading(show) {
+    const submitBtn = document.getElementById('mentor-save-btn');
+    
+    if (show) {
+        submitBtn.disabled = true;
+        submitBtn.style.cursor = 'not-allowed';
+        submitBtn.style.opacity = '0.6';
+        submitBtn.textContent = '⏳ שומר...';
+    } else {
+        submitBtn.disabled = false;
+        submitBtn.style.cursor = 'pointer';
+        submitBtn.style.opacity = '1';
+        // הטקסט יוחזר בפונקציות הפתיחה
+    }
+}
+
+// הצגת הודעה למנטורית
+function showMentorMessage(message, type = 'success') {
+    const messageDiv = document.getElementById('mentorModalMessage');
+    messageDiv.className = `modal-message ${type}`;
+    messageDiv.innerHTML = message;
+    messageDiv.style.display = 'block';
+    
+    // הסתרה אוטומטית אחרי 5 שניות אם זה הודעת הצלחה
+    if (type === 'success') {
+        setTimeout(() => {
+            messageDiv.style.display = 'none';
+        }, 5000);
+    }
+}
+
+// טיפול בשליחת טופס מנטורית
+document.getElementById('mentorForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const formAction = document.getElementById('mentorFormType').value;
+    const isEdit = formAction === 'edit_mentor_ajax';
+    
+    // בדיקת שדות חובה
+    const firstName = document.getElementById('mentorFirstName').value.trim();
+    const lastName = document.getElementById('mentorLastName').value.trim();
+    const phone = document.getElementById('mentorPhone').value.trim();
+    
+    if (!firstName || !lastName || !phone) {
+        showMentorMessage('אנא מלא את כל השדות החובה', 'error');
+        return;
+    }
+    
+    try {
+        showMentorLoading(true);
+        showMentorMessage('', ''); // איפוס הודעות
+        
+        const formData = new FormData(this);
+        formData.set('action', formAction);
+        formData.set('mentor_nonce', ajax_object.nonce);
+        
+        const response = await fetch(ajax_object.ajax_url, {
+            method: 'POST',
+            body: formData
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            showMentorMessage(result.data.message || 'הפעולה בוצעה בהצלחה!', 'success');
+            
+            // סגירת המודל אחרי זמן קצר
+            setTimeout(() => {
+                closeMentorModal();
+                // רענון הדף
+                window.location.reload();
+            }, 1500);
+        } else {
+            showMentorMessage('שגיאה: ' + (result.data.message || 'שגיאה לא ידועה'), 'error');
+        }
+    } catch (error) {
+        console.error('Error submitting mentor form:', error);
+        showMentorMessage('שגיאה בשליחת הטופס', 'error');
+    } finally {
+        showMentorLoading(false);
+    }
+});
+
+// סגירת מודל מנטורית בלחיצה על רקע או ESC
+document.getElementById('mentor-modal').addEventListener('click', function(e) {
+    if (e.target === this || e.target.id === 'mentor-modal-backdrop') {
+        closeMentorModal();
+    }
+});
+
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        const mentorModal = document.getElementById('mentor-modal');
+        const clientModal = document.getElementById('client-modal');
+        
+        if (mentorModal && mentorModal.style.display === 'block') {
+            closeMentorModal();
+        } else if (clientModal && clientModal.style.display === 'block') {
+            closeClientModal();
+        }
+    }
+}); 

@@ -197,9 +197,9 @@ get_header(); ?>
                     <?php endif; ?>
                     
                     <div class="mentor-actions">
-                        <a href="<?php echo admin_url('admin.php?page=add-mentor-form&edit=' . $mentor_id); ?>" class="action-btn primary">
+                        <button type="button" onclick="openEditMentorModal(<?php echo $mentor_id; ?>)" class="action-btn primary">
                             ✏️ ערוך
-                        </a>
+                        </button>
                         <a href="<?php echo get_post_type_archive_link('clients') . '?mentor=' . $mentor_id; ?>" class="action-btn secondary">
                             👥 המתאמנות שלה
                         </a>
@@ -219,9 +219,9 @@ get_header(); ?>
         <div class="no-mentors">
             <h3>אין מנטוריות עדיין</h3>
             <p>התחילי בהוספת המנטורית הראשונה שלך!</p>
-            <a href="<?php echo admin_url('post-new.php?post_type=mentors'); ?>" class="action-btn primary">
+            <button type="button" onclick="openAddMentorModal()" class="action-btn primary">
                 ➕ הוסף מנטורית חדשה
-            </a>
+            </button>
         </div>
     <?php endif; ?>
 </div>
