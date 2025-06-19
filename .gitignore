@@ -1,4 +1,5 @@
 # WordPress Core Files
+wp-admin/
 wp-includes/
 wp-*.php
 xmlrpc.php
