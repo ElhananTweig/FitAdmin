@@ -1992,25 +1992,7 @@ function restrict_admin_access() {
 // מוגיב כרגע - אפשר להפעיל אם רוצים הגבלה נוספת
 // add_action('admin_init', 'restrict_admin_access');
 
-// הוספת הודעת ברוכים הבאים למשתמש חדש
-function welcome_new_user($user_login, $user) {
-    $_SESSION['first_login'] = true;
-}
-add_action('wp_login', 'welcome_new_user', 10, 2);
 
-// הצגת הודעת ברוכים הבאים בעמוד הראשי
-function show_welcome_message() {
-    if (isset($_SESSION['first_login']) && $_SESSION['first_login'] == true) {
-        echo '<div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; text-align: center; margin: 20px 0; border-radius: 10px; font-size: 18px;">
-                🎉 ברוכים הבאים למערכת CRM תזונה של מרים קרישבסקי! 🎉<br>
-                <small style="margin-top: 10px; display: block;">כעת תוכל לנהל את המתאמנות, המנטוריות והקבוצות שלך בקלות</small>
-              </div>';
-        
-        // מחיקת ההודעה לאחר הצגה
-        unset($_SESSION['first_login']);
-    }
-}
-add_action('wp_footer', 'show_welcome_message');
 
 // ===== פונקציות AJAX למנטוריות =====
 
