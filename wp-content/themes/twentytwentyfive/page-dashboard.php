@@ -17,26 +17,16 @@ get_header(); ?>
     }
     
     .dashboard-hero {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        padding: 60px 40px;
-        text-align: center;
-        border-radius: 20px;
         margin-bottom: 40px;
+        border-radius: 20px;
+        overflow: hidden;
         box-shadow: 0 10px 30px rgba(0,0,0,0.2);
     }
     
-    .dashboard-hero h1 {
-        font-size: 3rem;
-        margin: 0 0 20px 0;
-        font-weight: 700;
-    }
-    
-    .dashboard-hero p {
-        font-size: 1.2rem;
-        opacity: 0.9;
-        max-width: 600px;
-        margin: 0 auto;
+    .dashboard-hero img {
+        width: 100%;
+        display: block;
+        height: auto;
     }
     
     .stats-overview {
@@ -216,9 +206,6 @@ get_header(); ?>
         }
         .stats-overview {
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-        }
-        .dashboard-hero h1 {
-            font-size: 2rem;
         }
         .chart-responsive-container {
             grid-template-columns: 1fr !important;
@@ -437,8 +424,7 @@ get_header(); ?>
 
 <div class="crm-main-dashboard">
     <div class="dashboard-hero">
-        <h1>🌟 מערכת CRM תזונה</h1>
-        <p>ברוכה הבאה! הנה סקירה כללית של המתאמנות שלך</p>
+        <img src="<?php echo get_template_directory_uri(); ?>/assets/images/miriam-upper-banner.jpg" alt="מערכת CRM תזונה">
     </div>
 
     <?php

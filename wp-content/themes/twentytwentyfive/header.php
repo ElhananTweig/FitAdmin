@@ -9,7 +9,7 @@
     <style>
         /* עיצוב מותאם לכותרת */
         .crm-header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: rgb(106, 158, 141);
             color: white;
             padding: 20px 0;
             box-shadow: 0 2px 15px rgba(0,0,0,0.15);
@@ -62,9 +62,9 @@
         }
         
         .crm-nav a:hover {
-            background: rgba(255,255,255,0.25);
+            background: rgba(255,255,255,0.3);
             transform: translateY(-2px);
-            box-shadow: 0 6px 12px rgba(0,0,0,0.2);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.15);
         }
         
         .user-actions {
@@ -90,9 +90,9 @@
         }
         
         .user-actions a:hover {
-            background: rgba(255,255,255,0.3);
+            background: rgba(255,255,255,0.35);
             transform: translateY(-1px);
-            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.12);
         }
         
         /* רספונסיבי */
