@@ -16,16 +16,27 @@ Tags: one-column, custom-colors, custom-menu, custom-logo, editor-style, feature
 
 /* רקע אתר - Miriam Background */
 body {
-	background-image: url('./assets/images/miriam-background.jpg');
+	background-image: url('./assets/images/back-color.png');
 	background-size: cover;
 	background-position: center center;
 	background-repeat: no-repeat;
 	background-attachment: fixed;
 }
 
+/* רקע למובייל */
+@media (max-width: 768px) {
+	body {
+		background-image: url('./assets/images/back-mobile-0.2.png');
+		background-size: cover;
+		background-position: center center;
+		background-repeat: no-repeat;
+		/*background-attachment: scroll;*/
+	}
+}
+
 /* וידוא שהתוכן יהיה קריא על הרקע */
 .wp-site-blocks {
-	background-color: rgba(255, 255, 255, 0.9);
+	background-color: rgba(255, 255, 255, 0.95);
 	padding: 20px;
 	border-radius: 5px;
 	margin: 20px;

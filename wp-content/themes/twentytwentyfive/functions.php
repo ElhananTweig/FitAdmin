@@ -79,14 +79,25 @@ function customize_login_page() {
     ?>
     <style type="text/css">
         body.login {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: #1A321D;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             direction: rtl;
+            height: 100vh;
+            overflow: hidden;
+            margin: 0;
+            padding: 0;
         }
 
         #login {
             width: 400px;
-            margin: 5% auto;
+            margin: 0 auto;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            align-items: center;
+            padding-top: 7vh;
+            box-sizing: border-box;
         }
 
         .login h1 a {
@@ -133,8 +144,8 @@ function customize_login_page() {
         .login form .input:focus,
         .login input[type="text"]:focus,
         .login input[type="password"]:focus {
-            border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            border-color: rgb(106, 158, 141);
+            box-shadow: 0 0 0 3px rgba(106, 158, 141, 0.2);
             outline: none;
         }
 
@@ -147,7 +158,7 @@ function customize_login_page() {
         }
 
         .login .button-primary {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: rgb(106, 158, 141);
             border: none;
             border-radius: 8px;
             color: #fff;
@@ -162,8 +173,9 @@ function customize_login_page() {
         }
 
         .login .button-primary:hover {
+            background: rgba(106, 158, 141, 0.9);
             transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+            box-shadow: 0 8px 25px rgba(106, 158, 141, 0.3);
         }
 
         .login .forgetmenot {
@@ -1918,19 +1930,30 @@ function additional_login_styles() {
         @media (max-width: 480px) {
             #login {
                 width: 90%;
-                margin: 2% auto;
+                margin: 0 auto;
+                height: 100vh;
+                display: flex;
+                flex-direction: column;
+                justify-content: flex-start;
+                align-items: center;
+                padding-top: 8vh;
+                box-sizing: border-box;
             }
             
             .login form {
-                padding: 25px;
+                padding: 20px;
             }
             
             .login h1 a {
-                font-size: 24px;
+                font-size: 20px;
             }
             
             .login-title {
-                font-size: 20px;
+                font-size: 18px;
+            }
+            
+            .login-subtitle {
+                font-size: 14px;
             }
         }
     </style>

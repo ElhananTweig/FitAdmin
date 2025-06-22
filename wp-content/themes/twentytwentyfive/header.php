@@ -9,7 +9,7 @@
     <style>
         /* עיצוב מותאם לכותרת */
         .crm-header {
-            background: rgb(106, 158, 141);
+            background: #2b4039;
             color: white;
             padding: 20px 0;
             box-shadow: 0 2px 15px rgba(0,0,0,0.15);
