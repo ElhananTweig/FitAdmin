@@ -21,6 +21,7 @@ get_header(); ?>
         border-radius: 20px;
         overflow: hidden;
         box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        border: 1px solid rgba(255, 255, 255, 0.50);
     }
     
     .dashboard-hero img {
@@ -37,12 +38,15 @@ get_header(); ?>
     }
     
     .stat-card {
-        background: white;
-        padding: 30px;
-        border-radius: 15px;
-        text-align: center;
-        box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        background: rgba(38, 59, 52, 0.70);
+        backdrop-filter: blur(5.9px);
+        -webkit-backdrop-filter: blur(5.9px);
+        border: 1px solid rgba(255, 255, 255, 0.91);
         border-right: 5px solid;
+        padding: 30px;
+        border-radius: 16px;
+        text-align: center;
+        box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
         transition: transform 0.3s, box-shadow 0.3s;
     }
     
@@ -65,14 +69,16 @@ get_header(); ?>
     .stat-number {
         font-size: 3rem;
         font-weight: bold;
-        color: #1f2937;
+        color: #d7dedc;
         margin-bottom: 10px;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
     }
     
     .stat-label {
-        color: #6b7280;
+        color: #d7dedc;
         font-size: 1rem;
-        font-weight: 500;
+        font-weight: 600;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
     }
     
     .dashboard-sections {
@@ -83,20 +89,24 @@ get_header(); ?>
     }
     
     .dashboard-section {
-        background: white;
+        background: rgba(85, 85, 85, 0.70);
+        backdrop-filter: blur(5.9px);
+        -webkit-backdrop-filter: blur(5.9px);
+        border: 1px solid rgba(255, 255, 255, 0.91);
         padding: 30px;
-        border-radius: 15px;
-        box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        border-radius: 16px;
+        box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
     }
     
     .section-title {
         font-size: 1.5rem;
         font-weight: 600;
-        color: #1f2937;
+        color: #d7dedc;
         margin-bottom: 20px;
         display: flex;
         align-items: center;
         gap: 10px;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
     }
     
     .client-preview {
@@ -119,25 +129,31 @@ get_header(); ?>
     
     .client-name {
         font-weight: 600;
-        color: #1f2937;
+        color: #d7dedc;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
     }
     
     .client-phone {
-        color: #3b82f6;
+        color: #d7dedc;
         font-size: 0.875rem;
         text-decoration: none;
+        opacity: 0.9;
     }
     
     .client-date {
-        color: #6b7280;
+        color: #d7dedc;
         font-size: 0.875rem;
+        opacity: 0.8;
     }
     
     .referral-chart {
-        background: white;
+        background: rgba(255, 255, 255, 0.45);
+        backdrop-filter: blur(5.9px);
+        -webkit-backdrop-filter: blur(5.9px);
+        border: 1px solid rgba(255, 255, 255, 0.91);
         padding: 30px;
-        border-radius: 15px;
-        box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        border-radius: 16px;
+        box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
         margin-bottom: 40px;
     }
     
@@ -278,11 +294,13 @@ get_header(); ?>
     .legend-count {
         font-weight: 600;
         font-size: 0.95rem;
+        color: #d7dedc;
     }
     
     .legend-percentage {
         font-size: 0.875rem;
-        color: #6b7280;
+        color: #d7dedc;
+        opacity: 0.8;
     }
     
     /* סגנונות לבאנרים בשני עמודות */
@@ -294,10 +312,13 @@ get_header(); ?>
     }
     
     .banner-half {
-        background: white;
+        background: rgba(255, 255, 255, 0.45);
+        backdrop-filter: blur(5.9px);
+        -webkit-backdrop-filter: blur(5.9px);
+        border: 1px solid rgba(255, 255, 255, 0.91);
         padding: 30px;
-        border-radius: 15px;
-        box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        border-radius: 16px;
+        box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
     }
     
     .banner-half .chart-responsive-container {
@@ -346,18 +367,19 @@ get_header(); ?>
     .summary-stat .stat-number {
         font-size: 2rem;
         font-weight: 700;
-        color: #1f2937;
+        color: #d7dedc;
         margin-bottom: 5px;
     }
     
     .summary-stat .stat-label {
-        color: #6b7280;
+        color: #d7dedc;
         font-size: 0.9rem;
         font-weight: 500;
+        opacity: 0.8;
     }
     
     .recent-finished h4 {
-        color: #374151;
+        color: #d7dedc;
         margin-bottom: 15px;
         font-size: 1.1rem;
     }
@@ -376,12 +398,13 @@ get_header(); ?>
     
     .finished-client-item .client-name {
         font-weight: 600;
-        color: #1f2937;
+        color: #d7dedc;
     }
     
     .finished-client-item .finish-date {
-        color: #6b7280;
+        color: #d7dedc;
         font-size: 0.85rem;
+        opacity: 0.8;
     }
     
     .banner-action {
@@ -1001,8 +1024,8 @@ get_header(); ?>
     </div>
 
     <!-- מה חדש השבוע -->
-    <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 40px; border-radius: 20px; margin-top: 40px; box-shadow: 0 10px 30px rgba(0,0,0,0.2);">
-        <h2 style="color: white; text-align: center; margin-bottom: 30px; font-size: 2rem;">☀️ מה חדש השבוע</h2>
+    <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #d7dedc; padding: 40px; border-radius: 20px; margin-top: 40px; box-shadow: 0 10px 30px rgba(0,0,0,0.2);">
+        <h2 style="color: #d7dedc; text-align: center; margin-bottom: 30px; font-size: 2rem;">☀️ מה חדש השבוע</h2>
         
         <!-- נתונים כלליים -->
         <?php 
@@ -1049,7 +1072,7 @@ get_header(); ?>
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 25px;">
             <!-- מתאמנות שהתחילו השבוע -->
             <div style="background: rgba(255,255,255,0.1); padding: 20px; border-radius: 15px;">
-                <h4 style="margin: 0 0 15px 0; color: white; font-size: 1.1rem; display: flex; align-items: center; gap: 8px;">
+                <h4 style="margin: 0 0 15px 0; color: #d7dedc; font-size: 1.1rem; display: flex; align-items: center; gap: 8px;">
                     👥 מתאמנות שהתחילו השבוע
                 </h4>
                 <?php if ($weekly_data['new_clients']): ?>
@@ -1071,7 +1094,7 @@ get_header(); ?>
 
             <!-- קבוצות חדשות שנפתחו השבוע -->
             <div style="background: rgba(255,255,255,0.1); padding: 20px; border-radius: 15px;">
-                <h4 style="margin: 0 0 15px 0; color: white; font-size: 1.1rem; display: flex; align-items: center; gap: 8px;">
+                <h4 style="margin: 0 0 15px 0; color: #d7dedc; font-size: 1.1rem; display: flex; align-items: center; gap: 8px;">
                     🌟 קבוצות חדשות שנפתחו השבוע
                 </h4>
                 <?php if ($weekly_data['new_groups']): ?>
@@ -1093,7 +1116,7 @@ get_header(); ?>
 
             <!-- תשלומים שהתעדכנו השבוע -->
             <div style="background: rgba(255,255,255,0.1); padding: 20px; border-radius: 15px;">
-                <h4 style="margin: 0 0 15px 0; color: white; font-size: 1.1rem; display: flex; align-items: center; gap: 8px;">
+                <h4 style="margin: 0 0 15px 0; color: #d7dedc; font-size: 1.1rem; display: flex; align-items: center; gap: 8px;">
                     💰 תשלומים שהתעדכנו השבוע
                 </h4>
                 <?php if ($weekly_data['updated_payments']): ?>
@@ -1117,7 +1140,7 @@ get_header(); ?>
             <!-- מנטוריות חדשות -->
             <?php if ($weekly_data['new_mentors']): ?>
             <div style="background: rgba(255,255,255,0.1); padding: 20px; border-radius: 15px;">
-                <h4 style="margin: 0 0 15px 0; color: white; font-size: 1.1rem; display: flex; align-items: center; gap: 8px;">
+                <h4 style="margin: 0 0 15px 0; color: #d7dedc; font-size: 1.1rem; display: flex; align-items: center; gap: 8px;">
                     👩‍💼 מנטוריות חדשות השבוע
                 </h4>
                 <?php foreach ($weekly_data['new_mentors'] as $mentor): ?>
