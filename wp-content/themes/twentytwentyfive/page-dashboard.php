@@ -471,7 +471,7 @@ get_header(); ?>
         );
         
         $today = date('Y-m-d');
-        $two_weeks_later = date('Y-m-d', strtotime('+7 days')); // שבוע אחד במקום שבועיים
+        $one_week_later = date('Y-m-d', strtotime('+7 days')); // שבוע מהיום
         
         foreach ($clients as $client) {
             if (!function_exists('get_field')) continue;
@@ -488,7 +488,7 @@ get_header(); ?>
             }
             
             // ספירת מסיימים בקרוב
-            if ($end_date <= $two_weeks_later && $end_date >= $today && !$is_frozen) {
+            if ($end_date <= $one_week_later && $end_date >= $today && !$is_frozen) {
                 $stats['ending_soon']++;
             }
             
@@ -527,7 +527,7 @@ get_header(); ?>
 
     function get_public_ending_soon_clients() {
         $today = date('Y-m-d');
-        $two_weeks_later = date('Y-m-d', strtotime('+7 days')); // שבוע אחד במקום שבועיים
+        $one_week_later = date('Y-m-d', strtotime('+7 days')); // שבוע מהיום
         
         return get_posts(array(
             'post_type' => 'clients',
@@ -537,7 +537,7 @@ get_header(); ?>
                 'relation' => 'AND',
                 array(
                     'key' => 'end_date',
-                    'value' => array($today, $two_weeks_later),
+                    'value' => array($today, $one_week_later),
                     'compare' => 'BETWEEN',
                     'type' => 'DATE'
                 ),

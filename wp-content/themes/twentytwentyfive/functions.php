@@ -2149,6 +2149,133 @@ function edit_mentor_ajax() {
 add_action('wp_ajax_edit_mentor_ajax', 'edit_mentor_ajax');
 add_action('wp_ajax_nopriv_edit_mentor_ajax', 'edit_mentor_ajax');
 
+// AJAX handler למחיקת מתאמנת
+function delete_client_ajax() {
+    // בדיקת nonce לאבטחה
+    if (!wp_verify_nonce($_POST['nonce'], 'delete_client_nonce')) {
+        wp_die('אין הרשאה לבצע פעולה זו', 'שגיאת אבטחה', array('response' => 403));
+    }
+    
+    // בדיקה שהמשתמש מחובר
+    if (!is_user_logged_in()) {
+        wp_send_json_error('יש להתחבר כדי לבצע פעולה זו');
+        return;
+    }
+    
+    // קבלת מזהה המתאמנת
+    $client_id = intval($_POST['client_id']);
+    
+    if (!$client_id) {
+        wp_send_json_error('מזהה מתאמנת לא תקין');
+        return;
+    }
+    
+    // בדיקה שהפוסט קיים ומסוג clients
+    $post = get_post($client_id);
+    if (!$post || $post->post_type !== 'clients') {
+        wp_send_json_error('המתאמנת לא נמצאה');
+        return;
+    }
+    
+    // שמירת שם המתאמנת לפני המחיקה
+    $first_name = get_field('first_name', $client_id);
+    $last_name = get_field('last_name', $client_id);
+    $client_name = trim($first_name . ' ' . $last_name);
+    
+    // ביצוע המחיקה
+    $deleted = wp_delete_post($client_id, true); // true = מחיקה לצמיתות (לא לפח)
+    
+    if ($deleted) {
+        // מחיקה מוצלחת
+        wp_send_json_success(array(
+            'message' => "המתאמנת {$client_name} נמחקה בהצלחה",
+            'client_id' => $client_id,
+            'client_name' => $client_name
+        ));
+    } else {
+        // כשל במחיקה
+        wp_send_json_error('אירעה שגיאה במהלך המחיקה');
+    }
+}
+
+add_action('wp_ajax_delete_client', 'delete_client_ajax');
+add_action('wp_ajax_nopriv_delete_client', 'delete_client_ajax');
+
+// AJAX handler למחיקת קבוצה
+function delete_group_ajax() {
+    // בדיקת nonce לאבטחה
+    if (!wp_verify_nonce($_POST['nonce'], 'delete_group_nonce')) {
+        wp_die('אין הרשאה לבצע פעולה זו', 'שגיאת אבטחה', array('response' => 403));
+    }
+    
+    // בדיקה שהמשתמש מחובר ויש לו הרשאות
+    if (!is_user_logged_in() || !current_user_can('manage_options')) {
+        wp_send_json_error('יש להתחבר עם הרשאות מנהל כדי לבצע פעולה זו');
+        return;
+    }
+    
+    // קבלת מזהה הקבוצה
+    $group_id = intval($_POST['group_id']);
+    
+    if (!$group_id) {
+        wp_send_json_error('מזהה קבוצה לא תקין');
+        return;
+    }
+    
+    // בדיקה שהפוסט קיים ומסוג groups
+    $post = get_post($group_id);
+    if (!$post || $post->post_type !== 'groups') {
+        wp_send_json_error('הקבוצה לא נמצאה');
+        return;
+    }
+    
+    // שמירת שם הקבוצה לפני המחיקה
+    $group_name = get_field('group_name', $group_id);
+    if (!$group_name) {
+        $group_name = $post->post_title;
+    }
+    
+    // חיפוש משתתפות בקבוצה וההעברה שלהן לליווי אישי
+    $participants = get_posts(array(
+        'post_type' => 'clients',
+        'posts_per_page' => -1,
+        'meta_query' => array(
+            array(
+                'key' => 'group_id',
+                'value' => $group_id,
+                'compare' => '='
+            )
+        )
+    ));
+    
+    $participants_updated = 0;
+    foreach ($participants as $participant) {
+        // העברת המשתתפת לליווי אישי
+        update_field('training_type', 'personal', $participant->ID);
+        update_field('group_id', '', $participant->ID); // מחיקת הקישור לקבוצה
+        $participants_updated++;
+    }
+    
+    // ביצוע המחיקה
+    $deleted = wp_delete_post($group_id, true); // true = מחיקה לצמיתות (לא לפח)
+    
+    if ($deleted) {
+        // מחיקה מוצלחת
+        wp_send_json_success(array(
+            'message' => "הקבוצה {$group_name} נמחקה בהצלחה",
+            'group_id' => $group_id,
+            'group_name' => $group_name,
+            'participants_updated' => $participants_updated
+        ));
+    } else {
+        // כשל במחיקה
+        wp_send_json_error('אירעה שגיאה במהלך המחיקה');
+    }
+}
+
+add_action('wp_ajax_delete_group', 'delete_group_ajax');
+add_action('wp_ajax_nopriv_delete_group', 'delete_group_ajax');
+
 
 
 

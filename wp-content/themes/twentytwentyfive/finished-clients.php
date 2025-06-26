@@ -324,6 +324,65 @@ $finished_clients = get_finished_clients_with_follow_up();
             50% { box-shadow: 0 8px 30px rgba(16, 185, 129, 0.3); }
         }
         
+        /* כפתורי פעולות */
+        .client-actions {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        
+        .action-btn {
+            padding: 6px 12px;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            transition: all 0.2s;
+        }
+        
+        .action-btn.primary {
+            background: #3b82f6;
+            color: white;
+        }
+        
+        .action-btn.primary:hover {
+            background: #2563eb;
+        }
+        
+        .action-btn.secondary {
+            background: #f3f4f6;
+            color: #374151;
+        }
+        
+        .action-btn.secondary:hover {
+            background: #e5e7eb;
+        }
+        
+        .action-btn.danger {
+            background: #ef4444;
+            color: white;
+        }
+        
+        .action-btn.danger:hover {
+            background: #dc2626;
+        }
+        
+        .action-btn.whatsapp {
+            background: #25d366;
+            color: white;
+        }
+        
+        .action-btn.whatsapp:hover {
+            background: #128c7e;
+            color: white;
+        }
+
         @media (max-width: 768px) {
             .follow-up-section {
                 grid-template-columns: 1fr;
@@ -474,6 +533,24 @@ $finished_clients = get_finished_clients_with_follow_up();
                             <div class="end-date-badge">
                                 סיום טיפול: <?php echo date('d/m/Y', strtotime($end_date)); ?>
                             </div>
+                            <div class="client-actions">
+                                <button type="button" onclick="openEditClientModal(<?php echo $client_id; ?>)" class="action-btn primary">
+                                    ✏️ ערוך
+                                </button>
+                                <?php 
+                                // המרת מספר טלפון ישראלי לפורמט בינלאומי עבור וואצאפ
+                                $whatsapp_number = $phone;
+                                if (substr($phone, 0, 1) === '0') {
+                                    $whatsapp_number = '972' . substr($phone, 1);
+                                }
+                                ?>
+                                <a href="https://wa.me/<?php echo $whatsapp_number; ?>" target="_blank" class="action-btn whatsapp">
+                                    💬 וואצאפ
+                                </a>
+                                <button type="button" onclick="deleteClient(<?php echo $client_id; ?>, '<?php echo esc_js($first_name . ' ' . $last_name); ?>')" class="action-btn danger">
+                                    🗑️ מחק
+                                </button>
+                            </div>
                         </div>
 
                         <div class="follow-up-section">
@@ -614,6 +691,90 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 500);
     }
 });
+
+// פונקציה למחיקת מתאמנת
+function deleteClient(clientId, clientName) {
+    // אזהרה לפני מחיקה
+    const confirmation = confirm(
+        `האם את בטוחה שברצונך למחוק את המתאמנת "${clientName}"?\n\n` +
+        `⚠️ זוהי פעולה בלתי הפיכה!\n` +
+        `כל הנתונים של המתאמנת יימחקו לצמיתות כולל:\n` +
+        `• פרטים אישיים\n` +
+        `• היסטוריית משקל\n` +
+        `• הערות מעקב\n` +
+        `• כל המידע הקשור אליה\n\n` +
+        `האם להמשיך?`
+    );
+    
+    if (!confirmation) {
+        return; // המשתמש ביטל
+    }
+    
+    // הצגת הודעת טעינה
+    const loadingMessage = document.createElement('div');
+    loadingMessage.id = 'delete-loading';
+    loadingMessage.style.cssText = `
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: rgba(0, 0, 0, 0.8);
+        color: white;
+        padding: 20px 30px;
+        border-radius: 10px;
+        z-index: 9999;
+        text-align: center;
+        font-size: 16px;
+    `;
+    loadingMessage.innerHTML = '🗑️ מוחקת מתאמנת...';
+    document.body.appendChild(loadingMessage);
+    
+    // שליחת בקשת AJAX למחיקה
+    const formData = new FormData();
+    formData.append('action', 'delete_client');
+    formData.append('client_id', clientId);
+    formData.append('nonce', '<?php echo wp_create_nonce("delete_client_nonce"); ?>');
+    
+    fetch('<?php echo admin_url("admin-ajax.php"); ?>', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        // הסרת הודעת הטעינה
+        const loading = document.getElementById('delete-loading');
+        if (loading) loading.remove();
+        
+        if (data.success) {
+            // הצגת הודעת הצלחה
+            alert(`✅ המתאמנת "${clientName}" נמחקה בהצלחה!`);
+            
+            // רענון הדף
+            window.location.reload();
+        } else {
+            alert('❌ שגיאה: ' + (data.data || 'לא ניתן למחוק את המתאמנת'));
+        }
+    })
+    .catch(error => {
+        // הסרת הודעת הטעינה
+        const loading = document.getElementById('delete-loading');
+        if (loading) loading.remove();
+        
+        console.error('Error:', error);
+        alert('❌ אירעה שגיאה במהלך המחיקה. נסה שוב.');
+    });
+}
+
+// פונקציה לפתיחת מודל עריכה (אם קיים)
+function openEditClientModal(clientId) {
+    // בדיקה אם יש מודל עריכה זמין
+    if (typeof window.openEditClientModal === 'function') {
+        window.openEditClientModal(clientId);
+    } else {
+        // אם אין מודל זמין, הפניה לעמוד הראשי
+        window.location.href = '/clients/?edit=' + clientId;
+    }
+}
 </script>
 
 <?php get_footer(); ?> 

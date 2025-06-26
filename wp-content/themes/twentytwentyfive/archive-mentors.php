@@ -107,6 +107,16 @@ get_header(); ?>
         background: #e5e7eb;
     }
     
+    .action-btn.whatsapp {
+        background: #25d366;
+        color: white;
+    }
+    
+    .action-btn.whatsapp:hover {
+        background: #128c7e;
+        color: white;
+    }
+    
     .no-mentors {
         text-align: center;
         padding: 60px 20px;
@@ -203,14 +213,16 @@ get_header(); ?>
                         <a href="<?php echo get_post_type_archive_link('clients') . '?mentor=' . $mentor_id; ?>" class="action-btn secondary">
                             👥 המתאמנות שלה
                         </a>
-                        <a href="tel:<?php echo $phone; ?>" class="action-btn secondary">
-                            📞 התקשר
+                        <?php 
+                        // המרת מספר טלפון ישראלי לפורמט בינלאומי עבור וואצאפ
+                        $whatsapp_number = $phone;
+                        if (substr($phone, 0, 1) === '0') {
+                            $whatsapp_number = '972' . substr($phone, 1);
+                        }
+                        ?>
+                        <a href="https://wa.me/<?php echo $whatsapp_number; ?>" target="_blank" class="action-btn whatsapp">
+                            💬 וואצאפ
                         </a>
-                        <?php if ($email): ?>
-                            <a href="mailto:<?php echo $email; ?>" class="action-btn secondary">
-                                📧 מייל
-                            </a>
-                        <?php endif; ?>
                     </div>
                 </div>
             <?php endwhile; ?>

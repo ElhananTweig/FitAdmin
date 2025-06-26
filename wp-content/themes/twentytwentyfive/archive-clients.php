@@ -186,6 +186,25 @@ get_header(); ?>
         background: #e5e7eb;
     }
     
+    .action-btn.danger {
+        background: #ef4444;
+        color: white;
+    }
+    
+    .action-btn.danger:hover {
+        background: #dc2626;
+    }
+    
+    .action-btn.whatsapp {
+        background: #25d366;
+        color: white;
+    }
+    
+    .action-btn.whatsapp:hover {
+        background: #128c7e;
+        color: white;
+    }
+    
     .weight-progress {
         background: #f3f4f6;
         border-radius: 6px;
@@ -255,7 +274,7 @@ get_header(); ?>
     ));
     
     $today = date('Y-m-d');
-    $two_weeks_later = date('Y-m-d', strtotime('+7 days')); // שבוע אחד במקום שבועיים
+            $one_week_later = date('Y-m-d', strtotime('+7 days')); // שבוע מהיום
     
     $active_count = 0;
     $ending_soon_count = 0;
@@ -270,8 +289,10 @@ get_header(); ?>
             $frozen_count++;
         } elseif ($end_date < $today) {
             $ended_count++;
-        } elseif ($end_date <= $two_weeks_later) {
+        } elseif ($end_date <= $one_week_later) {
+            // מתאמנות שמסיימות בקרוב נחשבות גם כפעילות וגם כמסיימות בקרוב
             $ending_soon_count++;
+            $active_count++; // הוספה לפעילות גם כן
         } else {
             $active_count++;
         }
@@ -375,7 +396,6 @@ get_header(); ?>
                 $first_name = get_field('first_name');
                 $last_name = get_field('last_name');
                 $phone = get_field('phone');
-                $email = get_field('email');
                 $age = get_field('age');
                 $start_date = get_field('start_date');
                 $end_date = get_field('end_date');
@@ -435,7 +455,7 @@ get_header(); ?>
                     $status = 'ended';
                     $status_text = 'סיימה';
                     $card_class = 'ended';
-                } elseif ($end_date <= $two_weeks_later) {
+                } elseif ($end_date <= $one_week_later) {
                     // מתאמנות שמסיימות בקרוב הן גם פעילות וגם מסיימות בקרוב
                     $status = 'active ending';
                     $status_text = 'מסיים בקרוב';
@@ -555,14 +575,19 @@ get_header(); ?>
                         <button type="button" onclick="openEditClientModal(<?php echo $client_id; ?>)" class="action-btn primary">
                             ✏️ ערוך
                         </button>
-                        <a href="tel:<?php echo $phone; ?>" class="action-btn secondary">
-                            📞 התקשר
+                        <?php 
+                        // המרת מספר טלפון ישראלי לפורמט בינלאומי עבור וואצאפ
+                        $whatsapp_number = $phone;
+                        if (substr($phone, 0, 1) === '0') {
+                            $whatsapp_number = '972' . substr($phone, 1);
+                        }
+                        ?>
+                        <a href="https://wa.me/<?php echo $whatsapp_number; ?>" target="_blank" class="action-btn whatsapp">
+                            💬 וואצאפ
                         </a>
-                        <?php if ($email): ?>
-                            <a href="mailto:<?php echo $email; ?>" class="action-btn secondary">
-                                📧 מייל
-                            </a>
-                        <?php endif; ?>
+                        <button type="button" onclick="deleteClient(<?php echo $client_id; ?>, '<?php echo esc_js($first_name . ' ' . $last_name); ?>')" class="action-btn danger">
+                            🗑️ מחק
+                        </button>
                     </div>
                 </div>
             <?php endwhile; ?>
@@ -689,6 +714,79 @@ document.addEventListener('DOMContentLoaded', function() {
     mentorFilter.addEventListener('change', filterClients);
     clearButton.addEventListener('click', clearFilters);
 });
+
+// פונקציה למחיקת מתאמנת
+function deleteClient(clientId, clientName) {
+    // אזהרה לפני מחיקה
+    const confirmation = confirm(
+        `האם את בטוחה שברצונך למחוק את המתאמנת "${clientName}"?\n\n` +
+        `⚠️ זוהי פעולה בלתי הפיכה!\n` +
+        `כל הנתונים של המתאמנת יימחקו לצמיתות כולל:\n` +
+        `• פרטים אישיים\n` +
+        `• היסטוריית משקל\n` +
+        `• הערות מעקב\n` +
+        `• כל המידע הקשור אליה\n\n` +
+        `האם להמשיך?`
+    );
+    
+    if (!confirmation) {
+        return; // המשתמש ביטל
+    }
+    
+    // הצגת הודעת טעינה
+    const loadingMessage = document.createElement('div');
+    loadingMessage.id = 'delete-loading';
+    loadingMessage.style.cssText = `
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: rgba(0, 0, 0, 0.8);
+        color: white;
+        padding: 20px 30px;
+        border-radius: 10px;
+        z-index: 9999;
+        text-align: center;
+        font-size: 16px;
+    `;
+    loadingMessage.innerHTML = '🗑️ מוחקת מתאמנת...';
+    document.body.appendChild(loadingMessage);
+    
+    // שליחת בקשת AJAX למחיקה
+    const formData = new FormData();
+    formData.append('action', 'delete_client');
+    formData.append('client_id', clientId);
+    formData.append('nonce', '<?php echo wp_create_nonce("delete_client_nonce"); ?>');
+    
+    fetch('<?php echo admin_url("admin-ajax.php"); ?>', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        // הסרת הודעת הטעינה
+        const loading = document.getElementById('delete-loading');
+        if (loading) loading.remove();
+        
+        if (data.success) {
+            // הצגת הודעת הצלחה
+            alert(`✅ המתאמנת "${clientName}" נמחקה בהצלחה!`);
+            
+            // רענון הדף
+            window.location.reload();
+        } else {
+            alert('❌ שגיאה: ' + (data.data || 'לא ניתן למחוק את המתאמנת'));
+        }
+    })
+    .catch(error => {
+        // הסרת הודעת הטעינה
+        const loading = document.getElementById('delete-loading');
+        if (loading) loading.remove();
+        
+        console.error('Error:', error);
+        alert('❌ אירעה שגיאה במהלך המחיקה. נסה שוב.');
+    });
+}
 </script>
 
 <?php get_footer(); ?> 

@@ -24,7 +24,7 @@ function get_clients_stats() {
     );
     
     $today = date('Y-m-d');
-    $two_weeks_later = date('Y-m-d', strtotime('+7 days')); // שבוע אחד במקום שבועיים
+    $one_week_later = date('Y-m-d', strtotime('+7 days')); // שבוע מהיום
     
     foreach ($clients as $client) {
         $end_date = get_field('end_date', $client->ID);
@@ -38,7 +38,7 @@ function get_clients_stats() {
         }
         
         // ספירת מסיימים בקרוב (שבוע אחד)
-        if ($end_date <= $two_weeks_later && $end_date >= $today && !$is_frozen) {
+        if ($end_date <= $one_week_later && $end_date >= $today && !$is_frozen) {
             $stats['ending_soon']++;
         }
         
@@ -65,7 +65,7 @@ function get_clients_stats() {
 
 function get_ending_soon_clients() {
     $today = date('Y-m-d');
-    $two_weeks_later = date('Y-m-d', strtotime('+7 days')); // שבוע אחד במקום שבועיים
+    $one_week_later = date('Y-m-d', strtotime('+7 days')); // שבוע מהיום
     
     return get_posts(array(
         'post_type' => 'clients',
@@ -75,7 +75,7 @@ function get_ending_soon_clients() {
             'relation' => 'AND',
             array(
                 'key' => 'end_date',
-                'value' => array($today, $two_weeks_later),
+                'value' => array($today, $one_week_later),
                 'compare' => 'BETWEEN',
                 'type' => 'DATE'
             ),

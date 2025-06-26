@@ -126,6 +126,10 @@ get_header(); ?>
                                onclick="event.stopPropagation();">
                                 ✏️ ערוך
                             </a>
+                            <button type="button" onclick="event.stopPropagation(); deleteGroup(<?php echo $group_id; ?>, '<?php echo esc_js($group_name); ?>', <?php echo $participants_count; ?>);" 
+                                    style="background: #ef4444; color: white; padding: 8px 16px; border: none; border-radius: 6px; font-size: 0.875rem; font-weight: bold; cursor: pointer;">
+                                🗑️ מחק
+                            </button>
                         <?php endif; ?>
                     </div>
                 </div>
@@ -162,5 +166,94 @@ get_header(); ?>
     }
 }
 </style>
+
+<script>
+// פונקציה למחיקת קבוצה
+function deleteGroup(groupId, groupName, participantsCount) {
+    // בניית הודעת אזהרה מפורטת
+    let warningMessage = `האם את בטוחה שברצונך למחוק את הקבוצה "${groupName}"?\n\n⚠️ זוהי פעולה בלתי הפיכה!\n\n`;
+    
+    if (participantsCount > 0) {
+        warningMessage += `🚨 שימי לב: בקבוצה זו יש ${participantsCount} משתתפות!\n`;
+        warningMessage += `מחיקת הקבוצה תגרום לכך שהמשתתפות יועברו לליווי אישי.\n\n`;
+    }
+    
+    warningMessage += `מה יימחק:\n`;
+    warningMessage += `• פרטי הקבוצה\n`;
+    warningMessage += `• תיאור הקבוצה\n`;
+    warningMessage += `• קישור למנטורית\n`;
+    warningMessage += `• כל המידע הקשור לקבוצה\n\n`;
+    
+    if (participantsCount > 0) {
+        warningMessage += `המשתתפות יישארו במערכת אבל יועברו לליווי אישי.\n\n`;
+    }
+    
+    warningMessage += `האם להמשיך?`;
+    
+    const confirmation = confirm(warningMessage);
+    
+    if (!confirmation) {
+        return; // המשתמש ביטל
+    }
+    
+    // הצגת הודעת טעינה
+    const loadingMessage = document.createElement('div');
+    loadingMessage.id = 'delete-loading';
+    loadingMessage.style.cssText = `
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: rgba(0, 0, 0, 0.8);
+        color: white;
+        padding: 20px 30px;
+        border-radius: 10px;
+        z-index: 9999;
+        text-align: center;
+        font-size: 16px;
+    `;
+    loadingMessage.innerHTML = '🗑️ מוחקת קבוצה...';
+    document.body.appendChild(loadingMessage);
+    
+    // שליחת בקשת AJAX למחיקה
+    const formData = new FormData();
+    formData.append('action', 'delete_group');
+    formData.append('group_id', groupId);
+    formData.append('nonce', '<?php echo wp_create_nonce("delete_group_nonce"); ?>');
+    
+    fetch('<?php echo admin_url("admin-ajax.php"); ?>', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        // הסרת הודעת הטעינה
+        const loading = document.getElementById('delete-loading');
+        if (loading) loading.remove();
+        
+        if (data.success) {
+            // הצגת הודעת הצלחה
+            let successMessage = `✅ הקבוצה "${groupName}" נמחקה בהצלחה!`;
+            if (data.data.participants_updated > 0) {
+                successMessage += `\n\n${data.data.participants_updated} משתתפות הועברו לליווי אישי.`;
+            }
+            alert(successMessage);
+            
+            // רענון הדף
+            window.location.reload();
+        } else {
+            alert('❌ שגיאה: ' + (data.data || 'לא ניתן למחוק את הקבוצה'));
+        }
+    })
+    .catch(error => {
+        // הסרת הודעת הטעינה
+        const loading = document.getElementById('delete-loading');
+        if (loading) loading.remove();
+        
+        console.error('Error:', error);
+        alert('❌ אירעה שגיאה במהלך המחיקה. נסה שוב.');
+    });
+}
+</script>
 
 <?php get_footer(); ?> 
