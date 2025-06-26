@@ -89,6 +89,10 @@ get_header(); ?>
         border-right-color: #ef4444;
     }
     
+    .client-card.partial {
+        border-right-color: #f59e0b;
+    }
+    
     .client-name {
         font-size: 1.25rem;
         font-weight: 600;
@@ -251,7 +255,7 @@ get_header(); ?>
     ));
     
     $today = date('Y-m-d');
-    $two_weeks_later = date('Y-m-d', strtotime('+14 days'));
+    $two_weeks_later = date('Y-m-d', strtotime('+7 days')); // שבוע אחד במקום שבועיים
     
     $active_count = 0;
     $ending_soon_count = 0;
@@ -306,8 +310,9 @@ get_header(); ?>
                 <option value="active">פעיל</option>
                 <option value="ending">מסיים בקרוב</option>
                 <option value="frozen">בהקפאה</option>
-                <option value="ended">סיים</option>
-                <option value="unpaid">לא שילם</option>
+                <option value="ended">סיימה</option>
+                <option value="unpaid">לא שילמה</option>
+                <option value="partial">שילמה חלקית</option>
             </select>
         </div>
         <div class="filter-group">
@@ -431,14 +436,23 @@ get_header(); ?>
                     $status_text = 'סיימה';
                     $card_class = 'ended';
                 } elseif ($end_date <= $two_weeks_later) {
-                    $status = 'ending';
+                    // מתאמנות שמסיימות בקרוב הן גם פעילות וגם מסיימות בקרוב
+                    $status = 'active ending';
                     $status_text = 'מסיים בקרוב';
                     $card_class = 'ending-soon';
                 }
                 
+                // טיפול בסטטוס תשלום
                 if ($amount_paid == 0) {
                     $card_class .= ' unpaid';
-                    $status .= ' unpaid'; // הוספת סטטוס נוסף
+                    // הוספת סטטוס unpaid לכל הסטטוסים הקיימים
+                    $status_parts = array_unique(array_merge(explode(' ', $status), array('unpaid')));
+                    $status = implode(' ', $status_parts);
+                } elseif ($payment_amount && $amount_paid > 0 && $amount_paid < $payment_amount) {
+                    $card_class .= ' partial';
+                    // הוספת סטטוס partial לכל הסטטוסים הקיימים
+                    $status_parts = array_unique(array_merge(explode(' ', $status), array('partial')));
+                    $status = implode(' ', $status_parts);
                 }
                 
                 // חישוב התקדמות משקל
@@ -471,6 +485,8 @@ get_header(); ?>
                         <?php echo $status_text; ?>
                         <?php if ($amount_paid == 0): ?>
                             + לא שילמה
+                        <?php elseif ($payment_amount && $amount_paid > 0 && $amount_paid < $payment_amount): ?>
+                            + שילמה חלקית
                         <?php endif; ?>
                     </div>
                     

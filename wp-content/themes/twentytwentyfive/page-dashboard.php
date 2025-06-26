@@ -471,7 +471,7 @@ get_header(); ?>
         );
         
         $today = date('Y-m-d');
-        $two_weeks_later = date('Y-m-d', strtotime('+14 days'));
+        $two_weeks_later = date('Y-m-d', strtotime('+7 days')); // שבוע אחד במקום שבועיים
         
         foreach ($clients as $client) {
             if (!function_exists('get_field')) continue;
@@ -500,6 +500,12 @@ get_header(); ?>
             // ספירת סטטוס תשלום
             if ($amount_paid == 0) {
                 $stats['unpaid']++;
+            } elseif ($payment_amount && $amount_paid > 0 && $amount_paid < $payment_amount) {
+                // אם יש סכום לתשלום והתשלום חלקי
+                if (!isset($stats['partial'])) {
+                    $stats['partial'] = 0;
+                }
+                $stats['partial']++;
             } else {
                 $stats['paid']++;
             }
@@ -521,13 +527,14 @@ get_header(); ?>
 
     function get_public_ending_soon_clients() {
         $today = date('Y-m-d');
-        $two_weeks_later = date('Y-m-d', strtotime('+14 days'));
+        $two_weeks_later = date('Y-m-d', strtotime('+7 days')); // שבוע אחד במקום שבועיים
         
         return get_posts(array(
             'post_type' => 'clients',
             'posts_per_page' => 5,
             'post_status' => 'publish',
             'meta_query' => array(
+                'relation' => 'AND',
                 array(
                     'key' => 'end_date',
                     'value' => array($today, $two_weeks_later),
@@ -535,9 +542,26 @@ get_header(); ?>
                     'type' => 'DATE'
                 ),
                 array(
-                    'key' => 'is_frozen',
-                    'value' => false,
-                    'compare' => '='
+                    'relation' => 'OR',
+                    array(
+                        'key' => 'is_frozen',
+                        'value' => false,
+                        'compare' => '='
+                    ),
+                    array(
+                        'key' => 'is_frozen',
+                        'value' => 'false',
+                        'compare' => '='
+                    ),
+                    array(
+                        'key' => 'is_frozen',
+                        'value' => '',
+                        'compare' => '='
+                    ),
+                    array(
+                        'key' => 'is_frozen',
+                        'compare' => 'NOT EXISTS'
+                    )
                 )
             ),
             'meta_key' => 'end_date',
@@ -552,9 +576,20 @@ get_header(); ?>
             'posts_per_page' => 5,
             'post_status' => 'publish',
             'meta_query' => array(
+                'relation' => 'OR',
                 array(
                     'key' => 'is_frozen',
                     'value' => true,
+                    'compare' => '='
+                ),
+                array(
+                    'key' => 'is_frozen',
+                    'value' => 'true',
+                    'compare' => '='
+                ),
+                array(
+                    'key' => 'is_frozen',
+                    'value' => '1',
                     'compare' => '='
                 )
             )
@@ -900,6 +935,7 @@ get_header(); ?>
                     'posts_per_page' => -1,
                     'post_status' => 'publish',
                     'meta_query' => array(
+                        'relation' => 'AND',
                         array(
                             'key' => 'end_date',
                             'value' => date('Y-m-d'),
@@ -907,9 +943,26 @@ get_header(); ?>
                             'type' => 'DATE'
                         ),
                         array(
-                            'key' => 'is_frozen',
-                            'value' => false,
-                            'compare' => '='
+                            'relation' => 'OR',
+                            array(
+                                'key' => 'is_frozen',
+                                'value' => false,
+                                'compare' => '='
+                            ),
+                            array(
+                                'key' => 'is_frozen',
+                                'value' => 'false',
+                                'compare' => '='
+                            ),
+                            array(
+                                'key' => 'is_frozen',
+                                'value' => '',
+                                'compare' => '='
+                            ),
+                            array(
+                                'key' => 'is_frozen',
+                                'compare' => 'NOT EXISTS'
+                            )
                         )
                     )
                 )));
@@ -920,6 +973,7 @@ get_header(); ?>
                     'posts_per_page' => 3,
                     'post_status' => 'publish',
                     'meta_query' => array(
+                        'relation' => 'AND',
                         array(
                             'key' => 'end_date',
                             'value' => date('Y-m-d'),
@@ -927,9 +981,26 @@ get_header(); ?>
                             'type' => 'DATE'
                         ),
                         array(
-                            'key' => 'is_frozen',
-                            'value' => false,
-                            'compare' => '='
+                            'relation' => 'OR',
+                            array(
+                                'key' => 'is_frozen',
+                                'value' => false,
+                                'compare' => '='
+                            ),
+                            array(
+                                'key' => 'is_frozen',
+                                'value' => 'false',
+                                'compare' => '='
+                            ),
+                            array(
+                                'key' => 'is_frozen',
+                                'value' => '',
+                                'compare' => '='
+                            ),
+                            array(
+                                'key' => 'is_frozen',
+                                'compare' => 'NOT EXISTS'
+                            )
                         )
                     ),
                     'meta_key' => 'end_date',
@@ -943,11 +1014,34 @@ get_header(); ?>
                     'posts_per_page' => -1,
                     'post_status' => 'publish',
                     'meta_query' => array(
+                        'relation' => 'AND',
                         array(
                             'key' => 'end_date',
                             'value' => date('Y-m-d'),
                             'compare' => '<',
                             'type' => 'DATE'
+                        ),
+                        array(
+                            'relation' => 'OR',
+                            array(
+                                'key' => 'is_frozen',
+                                'value' => false,
+                                'compare' => '='
+                            ),
+                            array(
+                                'key' => 'is_frozen',
+                                'value' => 'false',
+                                'compare' => '='
+                            ),
+                            array(
+                                'key' => 'is_frozen',
+                                'value' => '',
+                                'compare' => '='
+                            ),
+                            array(
+                                'key' => 'is_frozen',
+                                'compare' => 'NOT EXISTS'
+                            )
                         )
                     )
                 )) as $finished_client) {

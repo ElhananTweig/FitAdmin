@@ -561,6 +561,16 @@ function create_groups_post_type() {
 }
 add_action('init', 'create_groups_post_type');
 
+// התאמת כמות הפוסטים בדפי archive של clients
+function modify_clients_query($query) {
+    if (!is_admin() && $query->is_main_query()) {
+        if (is_post_type_archive('clients')) {
+            $query->set('posts_per_page', -1); // הצגת כל המתאמנות
+        }
+    }
+}
+add_action('pre_get_posts', 'modify_clients_query');
+
 // הוספת טקסונומיות
 function create_client_taxonomies() {
     // סטטוס תשלום

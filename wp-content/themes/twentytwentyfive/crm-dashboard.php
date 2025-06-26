@@ -24,7 +24,7 @@ function get_clients_stats() {
     );
     
     $today = date('Y-m-d');
-    $two_weeks_later = date('Y-m-d', strtotime('+14 days'));
+    $two_weeks_later = date('Y-m-d', strtotime('+7 days')); // שבוע אחד במקום שבועיים
     
     foreach ($clients as $client) {
         $end_date = get_field('end_date', $client->ID);
@@ -37,7 +37,7 @@ function get_clients_stats() {
             $stats['active']++;
         }
         
-        // ספירת מסיימים בקרוב
+        // ספירת מסיימים בקרוב (שבוע אחד)
         if ($end_date <= $two_weeks_later && $end_date >= $today && !$is_frozen) {
             $stats['ending_soon']++;
         }
@@ -50,7 +50,7 @@ function get_clients_stats() {
         // ספירת סטטוס תשלום
         if ($amount_paid == 0) {
             $stats['unpaid']++;
-        } elseif ($amount_paid < $payment_amount) {
+        } elseif ($payment_amount && $amount_paid > 0 && $amount_paid < $payment_amount) {
             $stats['partial']++;
         } else {
             $stats['paid']++;
@@ -65,13 +65,14 @@ function get_clients_stats() {
 
 function get_ending_soon_clients() {
     $today = date('Y-m-d');
-    $two_weeks_later = date('Y-m-d', strtotime('+14 days'));
+    $two_weeks_later = date('Y-m-d', strtotime('+7 days')); // שבוע אחד במקום שבועיים
     
     return get_posts(array(
         'post_type' => 'clients',
         'posts_per_page' => 5,
         'post_status' => 'publish',
         'meta_query' => array(
+            'relation' => 'AND',
             array(
                 'key' => 'end_date',
                 'value' => array($today, $two_weeks_later),
@@ -79,9 +80,26 @@ function get_ending_soon_clients() {
                 'type' => 'DATE'
             ),
             array(
-                'key' => 'is_frozen',
-                'value' => false,
-                'compare' => '='
+                'relation' => 'OR',
+                array(
+                    'key' => 'is_frozen',
+                    'value' => false,
+                    'compare' => '='
+                ),
+                array(
+                    'key' => 'is_frozen',
+                    'value' => 'false',
+                    'compare' => '='
+                ),
+                array(
+                    'key' => 'is_frozen',
+                    'value' => '',
+                    'compare' => '='
+                ),
+                array(
+                    'key' => 'is_frozen',
+                    'compare' => 'NOT EXISTS'
+                )
             )
         ),
         'meta_key' => 'end_date',
@@ -96,9 +114,20 @@ function get_frozen_clients() {
         'posts_per_page' => 5,
         'post_status' => 'publish',
         'meta_query' => array(
+            'relation' => 'OR',
             array(
                 'key' => 'is_frozen',
                 'value' => true,
+                'compare' => '='
+            ),
+            array(
+                'key' => 'is_frozen',
+                'value' => 'true',
+                'compare' => '='
+            ),
+            array(
+                'key' => 'is_frozen',
+                'value' => '1',
                 'compare' => '='
             )
         )

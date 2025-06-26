@@ -13,6 +13,7 @@ function get_finished_clients_with_follow_up() {
         'posts_per_page' => -1,
         'post_status' => 'publish',
         'meta_query' => array(
+            'relation' => 'AND',
             array(
                 'key' => 'end_date',
                 'value' => $today,
@@ -20,9 +21,26 @@ function get_finished_clients_with_follow_up() {
                 'type' => 'DATE'
             ),
             array(
-                'key' => 'is_frozen',
-                'value' => false,
-                'compare' => '='
+                'relation' => 'OR',
+                array(
+                    'key' => 'is_frozen',
+                    'value' => false,
+                    'compare' => '='
+                ),
+                array(
+                    'key' => 'is_frozen',
+                    'value' => 'false',
+                    'compare' => '='
+                ),
+                array(
+                    'key' => 'is_frozen',
+                    'value' => '',
+                    'compare' => '='
+                ),
+                array(
+                    'key' => 'is_frozen',
+                    'compare' => 'NOT EXISTS'
+                )
             )
         ),
         'meta_key' => 'end_date',
