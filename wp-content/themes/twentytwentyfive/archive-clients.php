@@ -25,10 +25,13 @@ get_header(); ?>
     }
     
     .clients-filters {
-        background: white;
+        background: rgba(38, 59, 52, 0.70);
+        backdrop-filter: blur(5.9px);
+        -webkit-backdrop-filter: blur(5.9px);
+        border: 1px solid rgba(255, 255, 255, 0.91);
         padding: 20px;
-        border-radius: 8px;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        border-radius: 16px;
+        box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
         margin-bottom: 20px;
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -43,16 +46,43 @@ get_header(); ?>
     .filter-group label {
         font-weight: 500;
         margin-bottom: 5px;
-        color: #374151;
+        color: #d7dedc;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
     }
     
     .filter-group select,
     .filter-group input {
         padding: 8px 12px;
-        border: 1px solid #d1d5db;
-        border-radius: 6px;
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(2px);
+        -webkit-backdrop-filter: blur(2px);
+        border-radius: 8px;
         font-size: 14px;
         direction: rtl;
+        color: #d7dedc;
+    }
+    
+    .filter-group select:focus,
+    .filter-group input:focus {
+        outline: none;
+        border-color: rgba(255, 255, 255, 0.5);
+        background: rgba(255, 255, 255, 0.15);
+    }
+    
+    .filter-group select option {
+        background: #374151;
+        color: #d7dedc;
+    }
+    
+    .filter-group input::placeholder {
+        color: rgba(215, 222, 220, 0.7);
+    }
+    
+    #clear-filters:hover {
+        background: rgba(255, 255, 255, 0.3) !important;
+        border-color: rgba(255, 255, 255, 0.5) !important;
+        transform: translateY(-1px);
     }
     
     .clients-grid {
@@ -62,18 +92,21 @@ get_header(); ?>
     }
     
     .client-card {
-        background: white;
-        border-radius: 12px;
+        background: rgba(38, 59, 52, 0.70);
+        backdrop-filter: blur(5.9px);
+        -webkit-backdrop-filter: blur(5.9px);
+        border: 1px solid rgba(255, 255, 255, 0.91);
+        border-right: 5px solid #3b82f6;
+        border-radius: 16px;
         padding: 20px;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        transition: transform 0.2s, box-shadow 0.2s;
-        border-right: 4px solid #3b82f6;
+        box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+        transition: transform 0.3s, box-shadow 0.3s;
         position: relative;
     }
     
     .client-card:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        transform: translateY(-5px);
+        box-shadow: 0 10px 30px rgba(0,0,0,0.15);
     }
     
     .client-card.ending-soon {
@@ -96,7 +129,8 @@ get_header(); ?>
     .client-name {
         font-size: 1.25rem;
         font-weight: 600;
-        color: #1f2937;
+        color: #d7dedc;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
         margin-bottom: 10px;
     }
     
@@ -111,12 +145,26 @@ get_header(); ?>
         align-items: center;
         gap: 8px;
         font-size: 0.875rem;
-        color: #6b7280;
+        color: #d7dedc;
+        opacity: 0.9;
     }
     
     .client-detail strong {
-        color: #374151;
+        color: #d7dedc;
         min-width: 80px;
+        font-weight: 600;
+    }
+    
+    .client-detail a {
+        color: #ffffff !important;
+        text-decoration: none;
+        font-weight: 500;
+        transition: opacity 0.3s;
+    }
+    
+    .client-detail a:hover {
+        opacity: 0.8;
+        text-decoration: underline;
     }
     
     .client-status {
@@ -155,65 +203,71 @@ get_header(); ?>
         margin-top: 15px;
     }
     
-    .action-btn {
-        padding: 8px 12px;
-        border: none;
-        border-radius: 6px;
-        font-size: 0.875rem;
+    /* כפתורים עם אפקט זוהר */
+    .client-actions {
+        display: flex;
+        justify-content: center;
+        gap: 15px;
+        padding: 20px 0;
+    }
+
+    .btn-glow {
+        width: 45px;
+        height: 45px;
+        border-radius: 12px;
+        border: 2px solid transparent;
+        background: rgba(255, 255, 255, 0.05);
+        color: white;
         cursor: pointer;
-        text-decoration: none;
-        display: inline-flex;
+        display: flex;
         align-items: center;
-        gap: 5px;
-        transition: background 0.2s;
+        justify-content: center;
+        font-size: 16px;
+        transition: all 0.4s ease;
+        position: relative;
+        backdrop-filter: blur(10px);
+        text-decoration: none;
     }
-    
-    .action-btn.primary {
-        background: #3b82f6;
-        color: white;
+
+    .btn-glow:hover {
+        border-color: currentColor;
+        box-shadow: 0 0 20px currentColor;
+        background: rgba(255, 255, 255, 0.1);
+        transform: scale(1.05);
     }
-    
-    .action-btn.primary:hover {
-        background: #2563eb;
+
+    /* צבעים ספציפיים לכל כפתור */
+    .btn-glow.delete:hover { 
+        color: #ff4757; 
+        box-shadow: 0 0 20px #ff4757;
     }
-    
-    .action-btn.secondary {
-        background: #f3f4f6;
-        color: #374151;
+
+    .btn-glow.whatsapp:hover { 
+        color: #25d366; 
+        box-shadow: 0 0 20px #25d366;
     }
-    
-    .action-btn.secondary:hover {
-        background: #e5e7eb;
+
+    .btn-glow.edit:hover { 
+        color: #3742fa; 
+        box-shadow: 0 0 20px #3742fa;
     }
-    
-    .action-btn.danger {
-        background: #ef4444;
-        color: white;
-    }
-    
-    .action-btn.danger:hover {
-        background: #dc2626;
-    }
-    
-    .action-btn.whatsapp {
-        background: #25d366;
-        color: white;
-    }
-    
-    .action-btn.whatsapp:hover {
-        background: #128c7e;
-        color: white;
+
+    .btn-glow.view:hover { 
+        color: #5352ed; 
+        box-shadow: 0 0 20px #5352ed;
     }
     
     .weight-progress {
-        background: #f3f4f6;
-        border-radius: 6px;
+        background: rgba(255, 255, 255, 0.15);
+        border-radius: 12px;
         padding: 10px;
         margin-top: 10px;
+        backdrop-filter: blur(2px);
+        -webkit-backdrop-filter: blur(2px);
     }
     
     .weight-bar {
-        background: #e5e7eb;
+        background: rgba(255, 255, 255, 0.2);
         height: 4px;
         border-radius: 2px;
         overflow: hidden;
@@ -229,17 +283,26 @@ get_header(); ?>
     .no-clients {
         text-align: center;
         padding: 60px 20px;
-        color: #6b7280;
+        color: #d7dedc;
+        background: rgba(38, 59, 52, 0.70);
+        backdrop-filter: blur(5.9px);
+        -webkit-backdrop-filter: blur(5.9px);
+        border: 1px solid rgba(255, 255, 255, 0.91);
+        border-radius: 16px;
+        box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
     }
     
     .stats-bar {
         display: flex;
         justify-content: space-around;
-        background: white;
+        background: rgba(38, 59, 52, 0.70);
+        backdrop-filter: blur(5.9px);
+        -webkit-backdrop-filter: blur(5.9px);
+        border: 1px solid rgba(255, 255, 255, 0.91);
         padding: 20px;
-        border-radius: 8px;
+        border-radius: 16px;
         margin-bottom: 20px;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
     }
     
     .stat-item {
@@ -249,12 +312,14 @@ get_header(); ?>
     .stat-number {
         font-size: 1.5rem;
         font-weight: 600;
-        color: #1f2937;
+        color: #d7dedc;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
     }
     
     .stat-label {
         font-size: 0.875rem;
-        color: #6b7280;
+        color: #d7dedc;
+        opacity: 0.8;
         margin-top: 5px;
     }
 </style>
@@ -385,7 +450,7 @@ get_header(); ?>
         </div>
         <div class="filter-group">
             <label></label>
-            <button id="clear-filters" style="padding: 8px 16px; background: #6b7280; color: white; border: none; border-radius: 6px; cursor: pointer;">נקה פילטרים</button>
+            <button id="clear-filters" style="padding: 8px 16px; background: rgba(255, 255, 255, 0.2); backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px); color: #d7dedc; border: 1px solid rgba(255, 255, 255, 0.3); border-radius: 8px; cursor: pointer; font-weight: 500; transition: all 0.3s;">נקה פילטרים</button>
         </div>
     </div>
 
@@ -572,9 +637,8 @@ get_header(); ?>
                     <?php endif; ?>
                     
                     <div class="client-actions">
-                        <button type="button" onclick="openEditClientModal(<?php echo $client_id; ?>)" class="action-btn primary">
-                            ✏️ ערוך
-                        </button>
+                        <button type="button" onclick="openViewClientModal(<?php echo $client_id; ?>)" class="btn-glow view" title="צפה בפרטים מלאים">👁️</button>
+                        <button type="button" onclick="openEditClientModal(<?php echo $client_id; ?>)" class="btn-glow edit" title="ערוך מתאמנת">✏️</button>
                         <?php 
                         // המרת מספר טלפון ישראלי לפורמט בינלאומי עבור וואצאפ
                         $whatsapp_number = $phone;
@@ -582,12 +646,8 @@ get_header(); ?>
                             $whatsapp_number = '972' . substr($phone, 1);
                         }
                         ?>
-                        <a href="https://wa.me/<?php echo $whatsapp_number; ?>" target="_blank" class="action-btn whatsapp">
-                            💬 וואצאפ
-                        </a>
-                        <button type="button" onclick="deleteClient(<?php echo $client_id; ?>, '<?php echo esc_js($first_name . ' ' . $last_name); ?>')" class="action-btn danger">
-                            🗑️ מחק
-                        </button>
+                        <a href="https://wa.me/<?php echo $whatsapp_number; ?>" target="_blank" class="btn-glow whatsapp" title="שלח וואצאפ">💬</a>
+                        <button type="button" onclick="deleteClient(<?php echo $client_id; ?>, '<?php echo esc_js($first_name . ' ' . $last_name); ?>')" class="btn-glow delete" title="מחק מתאמנת">🗑️</button>
                     </div>
                 </div>
             <?php endwhile; ?>

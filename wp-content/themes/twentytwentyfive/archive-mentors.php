@@ -31,24 +31,28 @@ get_header(); ?>
     }
     
     .mentor-card {
-        background: white;
-        border-radius: 12px;
+        background: rgba(38, 59, 52, 0.70);
+        backdrop-filter: blur(5.9px);
+        -webkit-backdrop-filter: blur(5.9px);
+        border: 1px solid rgba(255, 255, 255, 0.91);
+        border-right: 5px solid #8b5cf6;
+        border-radius: 16px;
         padding: 25px;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        transition: transform 0.2s, box-shadow 0.2s;
-        border-right: 4px solid #8b5cf6;
+        box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+        transition: transform 0.3s, box-shadow 0.3s;
         position: relative;
     }
     
     .mentor-card:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        transform: translateY(-5px);
+        box-shadow: 0 10px 30px rgba(0,0,0,0.15);
     }
     
     .mentor-name {
         font-size: 1.3rem;
         font-weight: 600;
-        color: #1f2937;
+        color: #d7dedc;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
         margin-bottom: 15px;
     }
     
@@ -63,12 +67,26 @@ get_header(); ?>
         align-items: center;
         gap: 8px;
         font-size: 0.875rem;
-        color: #6b7280;
+        color: #d7dedc;
+        opacity: 0.9;
     }
     
     .mentor-detail strong {
-        color: #374151;
+        color: #d7dedc;
         min-width: 100px;
+        font-weight: 600;
+    }
+    
+    .mentor-detail a {
+        color: #ffffff !important;
+        text-decoration: none;
+        font-weight: 500;
+        transition: opacity 0.3s;
+    }
+    
+    .mentor-detail a:hover {
+        opacity: 0.8;
+        text-decoration: underline;
     }
     
     .mentor-actions {
@@ -117,21 +135,87 @@ get_header(); ?>
         color: white;
     }
     
+    .action-btn svg {
+        margin-left: 5px;
+    }
+    
     .no-mentors {
         text-align: center;
         padding: 60px 20px;
-        color: #6b7280;
+        color: #d7dedc;
+        background: rgba(38, 59, 52, 0.70);
+        backdrop-filter: blur(5.9px);
+        -webkit-backdrop-filter: blur(5.9px);
+        border: 1px solid rgba(255, 255, 255, 0.91);
+        border-radius: 16px;
+        box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
     }
     
     .mentor-commission {
-        background: #f0f9ff;
-        border: 2px solid #bfdbfe;
-        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.15);
+        backdrop-filter: blur(2px);
+        -webkit-backdrop-filter: blur(2px);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        border-radius: 12px;
         padding: 10px;
         margin: 10px 0;
         text-align: center;
         font-weight: 600;
-        color: #1e40af;
+        color: #d7dedc;
+    }
+    
+    /* כפתורים עם אפקט זוהר */
+    .mentor-actions {
+        display: flex;
+        justify-content: center;
+        gap: 15px;
+        padding: 20px 0;
+    }
+
+    .btn-glow {
+        width: 45px;
+        height: 45px;
+        border-radius: 12px;
+        border: 2px solid transparent;
+        background: rgba(255, 255, 255, 0.05);
+        color: white;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 16px;
+        transition: all 0.4s ease;
+        position: relative;
+        backdrop-filter: blur(10px);
+        text-decoration: none;
+    }
+
+    .btn-glow:hover {
+        border-color: currentColor;
+        box-shadow: 0 0 20px currentColor;
+        background: rgba(255, 255, 255, 0.1);
+        transform: scale(1.05);
+    }
+
+    /* צבעים ספציפיים לכל כפתור */
+    .btn-glow.delete:hover { 
+        color: #ff4757; 
+        box-shadow: 0 0 20px #ff4757;
+    }
+
+    .btn-glow.whatsapp:hover { 
+        color: #25d366; 
+        box-shadow: 0 0 20px #25d366;
+    }
+
+    .btn-glow.edit:hover { 
+        color: #3742fa; 
+        box-shadow: 0 0 20px #3742fa;
+    }
+
+    .btn-glow.view:hover { 
+        color: #5352ed; 
+        box-shadow: 0 0 20px #5352ed;
     }
 </style>
 
@@ -207,22 +291,19 @@ get_header(); ?>
                     <?php endif; ?>
                     
                     <div class="mentor-actions">
-                        <button type="button" onclick="openEditMentorModal(<?php echo $mentor_id; ?>)" class="action-btn primary">
-                            ✏️ ערוך
-                        </button>
-                        <a href="<?php echo get_post_type_archive_link('clients') . '?mentor=' . $mentor_id; ?>" class="action-btn secondary">
-                            👥 המתאמנות שלה
-                        </a>
-                        <?php 
-                        // המרת מספר טלפון ישראלי לפורמט בינלאומי עבור וואצאפ
-                        $whatsapp_number = $phone;
-                        if (substr($phone, 0, 1) === '0') {
-                            $whatsapp_number = '972' . substr($phone, 1);
-                        }
-                        ?>
-                        <a href="https://wa.me/<?php echo $whatsapp_number; ?>" target="_blank" class="action-btn whatsapp">
-                            💬 וואצאפ
-                        </a>
+                        <button type="button" onclick="openEditMentorModal(<?php echo $mentor_id; ?>)" class="btn-glow edit" title="ערוך מנטורית">✏️</button>
+                        <a href="<?php echo get_post_type_archive_link('clients') . '?mentor=' . $mentor_id; ?>" class="btn-glow view" title="צפה במתאמנות של המנטורית">👁️</a>
+                        <?php if ($phone): ?>
+                            <?php 
+                            // המרת מספר טלפון ישראלי לפורמט בינלאומי עבור וואצאפ
+                            $whatsapp_number = $phone;
+                            if (substr($phone, 0, 1) === '0') {
+                                $whatsapp_number = '972' . substr($phone, 1);
+                            }
+                            ?>
+                            <a href="https://wa.me/<?php echo $whatsapp_number; ?>" target="_blank" class="btn-glow whatsapp" title="שלח וואצאפ">💬</a>
+                        <?php endif; ?>
+                        <button type="button" onclick="deleteMentor(<?php echo $mentor_id; ?>, '<?php echo esc_js($first_name . ' ' . $last_name); ?>')" class="btn-glow delete" title="מחק מנטורית">🗑️</button>
                     </div>
                 </div>
             <?php endwhile; ?>
@@ -237,5 +318,67 @@ get_header(); ?>
         </div>
     <?php endif; ?>
 </div>
+
+<script>
+// פונקציה למחיקת מנטורית
+function deleteMentor(mentorId, mentorName) {
+    if (!confirm(`האם אתה בטוח שברצונך למחוק את המנטורית "${mentorName}"?\n\nפעולה זו בלתי הפיכה!`)) {
+        return;
+    }
+    
+    // הצגת הודעת טעינה
+    const loading = document.createElement('div');
+    loading.id = 'delete-loading';
+    loading.style.cssText = `
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: rgba(0,0,0,0.8);
+        color: white;
+        padding: 20px;
+        border-radius: 10px;
+        z-index: 9999;
+        font-size: 16px;
+    `;
+    loading.textContent = '🗑️ מוחק מנטורית...';
+    document.body.appendChild(loading);
+    
+    // שליחת בקשת AJAX למחיקה
+    const formData = new FormData();
+    formData.append('action', 'delete_mentor');
+    formData.append('mentor_id', mentorId);
+    formData.append('nonce', '<?php echo wp_create_nonce("delete_mentor_nonce"); ?>');
+    
+    fetch('<?php echo admin_url("admin-ajax.php"); ?>', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        // הסרת הודעת הטעינה
+        const loading = document.getElementById('delete-loading');
+        if (loading) loading.remove();
+        
+        if (data.success) {
+            // הצגת הודעת הצלחה
+            alert(`✅ המנטורית "${mentorName}" נמחקה בהצלחה!`);
+            
+            // רענון הדף
+            window.location.reload();
+        } else {
+            alert('❌ שגיאה: ' + (data.data || 'לא ניתן למחוק את המנטורית'));
+        }
+    })
+    .catch(error => {
+        // הסרת הודעת הטעינה
+        const loading = document.getElementById('delete-loading');
+        if (loading) loading.remove();
+        
+        console.error('Error:', error);
+        alert('❌ אירעה שגיאה במהלך המחיקה. נסה שוב.');
+    });
+}
+</script>
 
 <?php get_footer(); ?> 
