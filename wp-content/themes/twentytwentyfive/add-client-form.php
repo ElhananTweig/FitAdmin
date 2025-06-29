@@ -349,8 +349,7 @@ $payment_methods = array(
                         </label>
                         <input type="number" id="target_weight" name="target_weight" min="0" step="0.1" 
                                value="<?php echo isset($client_data['target_weight']) ? esc_attr($client_data['target_weight']) : ''; ?>"
-                               style="width: 100%; padding: 12px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 16px;"
-                               placeholder="65.0">
+                               style="width: 100%; padding: 12px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 16px;">
                     </div>
                 </div>
             </div>
@@ -411,10 +410,18 @@ document.getElementById('amount_paid').addEventListener('input', function() {
     }
 });
 
-// הגדרת תאריך התחלה לתאריך היום כברירת מחדל (רק אם זה לא עריכה)
-<?php if (!$is_edit): ?>
-document.getElementById('start_date').value = new Date().toISOString().split('T')[0];
-<?php endif; ?>
+// עדכון תאריך סיום כאשר תאריך התחלה משתנה
+document.getElementById('start_date').addEventListener('change', function() {
+    const startDate = new Date(this.value);
+    if (startDate && !isNaN(startDate)) {
+        // הוספת 3 חודשים לתאריך ההתחלה
+        const endDate = new Date(startDate);
+        endDate.setMonth(endDate.getMonth() + 3);
+        
+        // עדכון שדה תאריך הסיום
+        document.getElementById('end_date').value = endDate.toISOString().split('T')[0];
+    }
+});
 
 // העתקת משקל התחלתי למשקל נוכחי
 document.getElementById('start_weight').addEventListener('input', function() {

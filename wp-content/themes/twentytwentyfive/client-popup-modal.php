@@ -74,7 +74,7 @@ $payment_methods = array(
                         
                         <div class="form-group">
                             <label for="email">אימייל</label>
-                            <input type="email" id="email" name="email" placeholder="example@email.com">
+                            <input type="email" id="email" name="email">
                         </div>
                         
                         <div class="form-group">
@@ -202,7 +202,7 @@ $payment_methods = array(
                     <div class="form-row">
                         <div class="form-group">
                             <label for="start_weight">משקל התחלתי (ק"ג)</label>
-                            <input type="number" id="start_weight" name="start_weight" min="0" step="0.1" placeholder="70.5">
+                            <input type="number" id="start_weight" name="start_weight" min="0" step="0.1">
                         </div>
                         
                         <div class="form-group">
@@ -212,7 +212,7 @@ $payment_methods = array(
                         
                         <div class="form-group">
                             <label for="target_weight">משקל יעד (ק"ג)</label>
-                            <input type="number" id="target_weight" name="target_weight" min="0" step="0.1" placeholder="65.0">
+                            <input type="number" id="target_weight" name="target_weight" min="0" step="0.1">
                         </div>
                     </div>
                 </div>

@@ -63,6 +63,12 @@ class ClientModal {
             startWeight.addEventListener('input', () => this.copyStartWeight());
         }
 
+        // עדכון תאריך סיום כאשר תאריך התחלה משתנה
+        const startDate = document.getElementById('start_date');
+        if (startDate) {
+            startDate.addEventListener('change', () => this.updateEndDate());
+        }
+
         // אפקטים ויזואליים
         this.setupFormEffects();
 
@@ -135,8 +141,6 @@ class ClientModal {
     }
 
     setDefaultValues() {
-        const today = new Date().toISOString().split('T')[0];
-        document.getElementById('start_date').value = today;
         document.getElementById('training_type').value = 'personal';
         document.getElementById('amount_paid').value = '0';
     }
@@ -322,6 +326,23 @@ class ClientModal {
         
         if (startWeight.value && !currentWeight.value) {
             currentWeight.value = startWeight.value;
+        }
+    }
+
+    updateEndDate() {
+        const startDate = document.getElementById('start_date');
+        const endDate = document.getElementById('end_date');
+        
+        if (startDate.value) {
+            const startDateObj = new Date(startDate.value);
+            if (startDateObj && !isNaN(startDateObj)) {
+                // הוספת 3 חודשים לתאריך ההתחלה
+                const endDateObj = new Date(startDateObj);
+                endDateObj.setMonth(endDateObj.getMonth() + 3);
+                
+                // עדכון שדה תאריך הסיום
+                endDate.value = endDateObj.toISOString().split('T')[0];
+            }
         }
     }
 

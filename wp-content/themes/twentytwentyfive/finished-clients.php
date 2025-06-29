@@ -4,98 +4,97 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-// פונקציה לקבלת מתאמנות שסיימו + מתאמנות פוטנציאליות
+// פונקציה מאופטמת לקבלת מתאמנות שסיימו + מתאמנות פוטנציאליות
 function get_finished_clients_with_follow_up($filter = 'all') {
+    global $wpdb;
     $today = date('Y-m-d');
     
-    $meta_query = array(
-        'relation' => 'AND',
-        array(
-            'relation' => 'OR',
-            // מתאמנות שסיימו - שתאריך הסיום עבר
-            array(
-                'relation' => 'AND',
-                array(
-                    'key' => 'end_date',
-                    'value' => $today,
-                    'compare' => '<',
-                    'type' => 'DATE'
-                ),
-                array(
-                    'relation' => 'OR',
-                    array(
-                        'key' => 'is_frozen',
-                        'value' => false,
-                        'compare' => '='
-                    ),
-                    array(
-                        'key' => 'is_frozen',
-                        'value' => 'false',
-                        'compare' => '='
-                    ),
-                    array(
-                        'key' => 'is_frozen',
-                        'value' => '',
-                        'compare' => '='
-                    ),
-                    array(
-                        'key' => 'is_frozen',
-                        'compare' => 'NOT EXISTS'
-                    )
-                )
-            ),
-            // מתאמנות פוטנציאליות
-            array(
-                'key' => 'is_contact_lead',
-                'value' => true,
-                'compare' => '='
-            )
+    // שאילתה ישירה לדטאבייס - מהירה יותר
+    $sql = "
+        SELECT DISTINCT p.ID 
+        FROM {$wpdb->posts} p
+        INNER JOIN {$wpdb->postmeta} pm1 ON p.ID = pm1.post_id
+        LEFT JOIN {$wpdb->postmeta} pm2 ON p.ID = pm2.post_id AND pm2.meta_key = 'is_contact_lead'
+        LEFT JOIN {$wpdb->postmeta} pm3 ON p.ID = pm3.post_id AND pm3.meta_key = 'is_frozen'
+        WHERE p.post_type = 'clients' 
+        AND p.post_status = 'publish'
+        AND (
+            (pm1.meta_key = 'end_date' AND pm1.meta_value < %s AND (pm3.meta_value IS NULL OR pm3.meta_value != '1'))
+            OR
+            (pm2.meta_key = 'is_contact_lead' AND pm2.meta_value = '1')
         )
-    );
+    ";
     
-    // הוספת פילטר לפי סוג
+    // הוספת פילטר לפי הצורך
     if ($filter === 'finished') {
-        // רק מתאמנות שסיימו (לא פוטנציאליות)
-        $meta_query[] = array(
-            'relation' => 'OR',
-            array(
-                'key' => 'is_contact_lead',
-                'value' => false,
-                'compare' => '='
-            ),
-            array(
-                'key' => 'is_contact_lead',
-                'value' => 'false',
-                'compare' => '='
-            ),
-            array(
-                'key' => 'is_contact_lead',
-                'value' => '',
-                'compare' => '='
-            ),
-            array(
-                'key' => 'is_contact_lead',
-                'compare' => 'NOT EXISTS'
-            )
-        );
+        $sql .= " AND (pm2.meta_value IS NULL OR pm2.meta_value != '1')";
     } elseif ($filter === 'leads') {
-        // רק מתאמנות פוטנציאליות
-        $meta_query[] = array(
-            'key' => 'is_contact_lead',
-            'value' => true,
-            'compare' => '='
-        );
+        $sql .= " AND pm2.meta_value = '1'";
     }
     
-    return get_posts(array(
-        'post_type' => 'clients',
-        'posts_per_page' => -1,
-        'post_status' => 'publish',
-        'meta_query' => $meta_query,
-        'meta_key' => 'end_date',
-        'orderby' => 'meta_value',
-        'order' => 'DESC'
-    ));
+    $sql .= " ORDER BY pm1.meta_value DESC";
+    
+    $client_ids = $wpdb->get_col($wpdb->prepare($sql, $today));
+    
+    if (empty($client_ids)) {
+        return array();
+    }
+    
+    // קבלת כל הנתונים של ACF בפעם אחת - חיסכון עצום בשאילתות
+    $clients_data = array();
+    $ids_string = implode(',', array_map('intval', $client_ids));
+    
+    $meta_sql = "
+        SELECT post_id, meta_key, meta_value 
+        FROM {$wpdb->postmeta} 
+        WHERE post_id IN ($ids_string) 
+        AND meta_key IN ('first_name', 'last_name', 'phone', 'end_date', 'last_contact_date', 'next_contact_date', 'follow_up_notes', 'is_contact_lead')
+    ";
+    
+    $all_meta = $wpdb->get_results($meta_sql);
+    
+    // ארגון הנתונים לפי מתאמנת - מאחד את כל השאילתות
+    $organized_clients = array();
+    foreach ($all_meta as $meta) {
+        $organized_clients[$meta->post_id][$meta->meta_key] = $meta->meta_value;
+    }
+    
+    // המרה לפורמט התואם לקוד הקיים
+    $result = array();
+    foreach ($client_ids as $client_id) {
+        $client = new stdClass();
+        $client->ID = $client_id;
+        $result[] = $client;
+    }
+    
+    return $result;
+}
+
+// פונקציה עזר לקבלת נתוני ACF בצורה מאופטמת
+function get_clients_meta_optimized($client_ids) {
+    if (empty($client_ids)) {
+        return array();
+    }
+    
+    global $wpdb;
+    $ids_string = implode(',', array_map('intval', $client_ids));
+    
+    $meta_sql = "
+        SELECT post_id, meta_key, meta_value 
+        FROM {$wpdb->postmeta} 
+        WHERE post_id IN ($ids_string) 
+        AND meta_key IN ('first_name', 'last_name', 'phone', 'end_date', 'last_contact_date', 'next_contact_date', 'follow_up_notes', 'is_contact_lead')
+    ";
+    
+    $all_meta = $wpdb->get_results($meta_sql);
+    
+    // ארגון הנתונים לפי מתאמנת
+    $organized_clients = array();
+    foreach ($all_meta as $meta) {
+        $organized_clients[$meta->post_id][$meta->meta_key] = $meta->meta_value;
+    }
+    
+    return $organized_clients;
 }
 
 // הצגת הודעות הצלחה/שגיאה
@@ -116,444 +115,60 @@ if ($updated_client_id && function_exists('get_field')) {
 // קבלת פילטר מהפרמטרים
 $client_type_filter = isset($_GET['client_type']) ? sanitize_text_field($_GET['client_type']) : 'all';
 $finished_clients = get_finished_clients_with_follow_up($client_type_filter);
+
+// קבלת כל הנתונים של ACF בפעם אחת - אופטימיזציה חשובה!
+$client_ids = array_map(function($client) { return $client->ID; }, $finished_clients);
+$clients_meta_data = get_clients_meta_optimized($client_ids);
+
+// הוספת CSS ו-JS נפרדים לביצועים טובים יותר
+wp_enqueue_style('finished-clients-style', get_template_directory_uri() . '/assets/css/finished-clients.css', array(), '1.0');
+wp_enqueue_script('finished-clients-script', get_template_directory_uri() . '/assets/js/finished-clients.js', array(), '1.0', true);
 ?>
 
-<div class="wrap" dir="rtl">
-    <style>
-        .follow-up-container {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            direction: rtl;
-            text-align: right;
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-        
-        .page-header {
-            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
-            color: white;
-            padding: 30px;
-            border-radius: 15px;
-            margin-bottom: 30px;
-            text-align: center;
-        }
-        
-        .page-header h1 {
-            margin: 0 0 10px 0;
-            font-size: 2.5rem;
-            font-weight: 700;
-        }
-        
-        .page-header p {
-            margin: 0;
-            opacity: 0.9;
-            font-size: 1.1rem;
-        }
-        
-        .stats-overview {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 20px;
-            margin-bottom: 30px;
-        }
-        
-        .stat-card {
-            background: white;
-            padding: 25px;
-            border-radius: 12px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-            text-align: center;
-            border-top: 4px solid;
-        }
-        
-        .stat-card.total { border-top-color: #3b82f6; }
-        .stat-card.need-contact { border-top-color: #f59e0b; }
-        .stat-card.contacted { border-top-color: #10b981; }
-        
-        .stat-number {
-            font-size: 2.5rem;
-            font-weight: 700;
-            color: #1f2937;
-            margin-bottom: 5px;
-        }
-        
-        .stat-label {
-            color: #6b7280;
-            font-size: 0.9rem;
-        }
-        
-        .client-follow-card {
-            background: white;
-            border-radius: 15px;
-            padding: 25px;
-            margin-bottom: 20px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
-            border-right: 5px solid #6366f1;
-            transition: all 0.3s ease;
-        }
-        
-        .client-follow-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(0,0,0,0.12);
-        }
-        
-        .client-header {
-            display: grid;
-            grid-template-columns: 1fr auto;
-            gap: 20px;
-            align-items: center;
-            margin-bottom: 20px;
-            padding-bottom: 15px;
-            border-bottom: 1px solid #e5e7eb;
-        }
-        
-        .client-main-info {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-        
-        .client-name-main {
-            font-size: 1.4rem;
-            font-weight: 600;
-            color: #1f2937;
-        }
-        
-        .client-phone-main {
-            color: #3b82f6;
-            text-decoration: none;
-            font-weight: 500;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        
-        .client-phone-main:hover {
-            text-decoration: underline;
-        }
-        
-        .end-date-badge {
-            background: #f3f4f6;
-            color: #374151;
-            padding: 8px 15px;
-            border-radius: 20px;
-            font-size: 0.85rem;
-            font-weight: 500;
-            text-align: center;
-        }
-        
-        .follow-up-section {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-            margin-top: 15px;
-        }
-        
-        .follow-up-info {
-            background: #f8fafc;
-            padding: 15px;
-            border-radius: 10px;
-        }
-        
-        .follow-up-form {
-            background: #fefefe;
-            border: 1px solid #e5e7eb;
-            padding: 15px;
-            border-radius: 10px;
-        }
-        
-        .form-group {
-            margin-bottom: 15px;
-        }
-        
-        .form-group label {
-            display: block;
-            font-weight: 600;
-            color: #374151;
-            margin-bottom: 5px;
-            font-size: 0.9rem;
-        }
-        
-        .form-group input,
-        .form-group textarea {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #d1d5db;
-            border-radius: 6px;
-            font-size: 14px;
-            direction: rtl;
-        }
-        
-        .form-group textarea {
-            resize: vertical;
-            min-height: 80px;
-        }
-        
-        .update-btn {
-            background: linear-gradient(135deg, #10b981, #059669);
-            color: white;
-            padding: 10px 20px;
-            border: none;
-            border-radius: 8px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s;
-            font-size: 0.9rem;
-        }
-        
-        .update-btn:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
-        }
-        
-        .contact-status {
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
-            padding: 4px 10px;
-            border-radius: 12px;
-            font-size: 0.8rem;
-            font-weight: 500;
-        }
-        
-        .contact-status.recent {
-            background: #d1fae5;
-            color: #065f46;
-        }
-        
-        .contact-status.overdue {
-            background: #fef3c7;
-            color: #92400e;
-        }
-        
-        .contact-status.no-contact {
-            background: #fee2e2;
-            color: #991b1b;
-        }
-        
-        .filters-section {
-            background: white;
-            padding: 20px;
-            border-radius: 12px;
-            margin-bottom: 20px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-        }
-        
-        .filters-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
-        }
-        
-        .filter-group {
-            display: flex;
-            flex-direction: column;
-            gap: 5px;
-        }
-        
-        .filter-group label {
-            font-weight: 500;
-            color: #374151;
-            font-size: 0.9rem;
-        }
-        
-        .filter-group input,
-        .filter-group select {
-            padding: 8px 12px;
-            border: 1px solid #d1d5db;
-            border-radius: 6px;
-            direction: rtl;
-        }
-        
-        /* הדגשת כרטיס שזה עתה עודכן */
-        .client-follow-card.recently-updated {
-            border-right: 5px solid #10b981;
-            background: linear-gradient(135deg, #f0fdf4, #ffffff);
-            animation: highlightPulse 2s ease-in-out;
-        }
-        
-        @keyframes highlightPulse {
-            0%, 100% { box-shadow: 0 4px 15px rgba(0,0,0,0.08); }
-            50% { box-shadow: 0 8px 30px rgba(16, 185, 129, 0.3); }
-        }
-        
-        /* כפתורי פעולות */
-        .client-actions {
-            display: flex;
-            gap: 8px;
-            align-items: center;
-            flex-wrap: wrap;
-        }
-        
-        .action-btn {
-            padding: 6px 12px;
-            border: none;
-            border-radius: 6px;
-            font-size: 0.8rem;
-            font-weight: 500;
-            cursor: pointer;
-            text-decoration: none;
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-            transition: all 0.2s;
-        }
-        
-        .action-btn.primary {
-            background: #3b82f6;
-            color: white;
-        }
-        
-        .action-btn.primary:hover {
-            background: #2563eb;
-        }
-        
-        .action-btn.secondary {
-            background: #f3f4f6;
-            color: #374151;
-        }
-        
-        .action-btn.secondary:hover {
-            background: #e5e7eb;
-        }
-        
-        .action-btn.danger {
-            background: #ef4444;
-            color: white;
-        }
-        
-        .action-btn.danger:hover {
-            background: #dc2626;
-        }
-        
-        .action-btn.whatsapp {
-            background: #25d366;
-            color: white;
-        }
-        
-        .action-btn.whatsapp:hover {
-            background: #128c7e;
-            color: white;
-        }
-
-        /* כפתורי פילטר */
-        .filter-btn {
-            transition: all 0.3s ease;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-        }
-        
-        .filter-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-        }
-        
-        .filter-btn.active {
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-        }
-        
-        /* סגנונות נוספים לכרטיסי מתאמנת */
-        .client-follow-card {
-            position: relative;
-        }
-        
-        .client-follow-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            right: 0;
-            width: 4px;
-            height: 100%;
-            background: #6366f1;
-            border-radius: 0 15px 15px 0;
-        }
-        
-        /* עיצוב מיוחד למתאמנות פוטנציאליות */
-        .client-follow-card[data-is-lead="true"]::before {
-            background: linear-gradient(135deg, #10b981, #059669);
-        }
-        
-        .client-follow-card[data-is-lead="true"] {
-            border-right: 5px solid #10b981;
-        }
-
-        @media (max-width: 768px) {
-            .follow-up-section {
-                grid-template-columns: 1fr;
-            }
-            
-            .client-header {
-                grid-template-columns: 1fr;
-                text-align: center;
-            }
-            
-            .stats-overview {
-                grid-template-columns: 1fr;
-            }
-            
-            .filter-btn {
-                font-size: 0.8rem;
-                padding: 6px 12px;
-            }
-        }
-    </style>
-
-    <div class="follow-up-container">
+<div class="wrap follow-up-container" dir="rtl">
         <!-- כותרת העמוד -->
         <div class="page-header">
             <h1>📝 מעקב מתאמנות שסיימו</h1>
             <p>מעקב אחר מתאמנות שסיימו טיפול להזמנתן בעתיד</p>
         </div>
 
-        <?php if ($show_success): ?>
-            <div style="background: #d1fae5; border: 1px solid #10b981; color: #065f46; padding: 15px 20px; border-radius: 10px; margin-bottom: 30px; text-align: center;">
-                <strong>✅ המעקב עודכן בהצלחה!</strong>
-                <?php if ($updated_client_name): ?>
-                    <p style="margin: 5px 0 0 0; font-size: 0.9rem;">עדכון מעקב עבור <?php echo $updated_client_name; ?></p>
-                <?php endif; ?>
+        <!-- הודעות מערכת -->
+        <?php if ($show_success && $updated_client_name): ?>
+            <div class="success-message">
+                <div class="success-icon">✅</div>
+                <div class="success-text">
+                    <strong>מתאמנת עודכנה בהצלחה!</strong><br>
+                    <span><?php echo esc_html($updated_client_name); ?> עודכנה בהצלחה</span>
+                </div>
             </div>
         <?php endif; ?>
 
-        <?php if ($show_added): ?>
-            <div style="background: #d1fae5; border: 1px solid #10b981; color: #065f46; padding: 15px 20px; border-radius: 10px; margin-bottom: 30px; text-align: center;">
-                <strong>🎉 המתאמנת נוספה בהצלחה למעקב!</strong>
-                <?php if ($updated_client_name): ?>
-                    <p style="margin: 5px 0 0 0; font-size: 0.9rem;"><?php echo $updated_client_name; ?> נוספה לרשימת המתאמנות למעקב</p>
-                <?php endif; ?>
+        <?php if ($show_added && $updated_client_name): ?>
+            <div class="success-message">
+                <div class="success-icon">🎉</div>
+                <div class="success-text">
+                    <strong>מתאמנת נוספה בהצלחה!</strong><br>
+                    <span><?php echo esc_html($updated_client_name); ?> נוספה למעקב</span>
+                </div>
             </div>
         <?php endif; ?>
 
         <?php if ($show_error): ?>
-            <div style="background: #fee2e2; border: 1px solid #ef4444; color: #991b1b; padding: 15px 20px; border-radius: 10px; margin-bottom: 30px; text-align: center;">
-                <strong>❌ 
-                    <?php 
-                    switch($error_type) {
-                        case 2:
-                            echo 'שגיאה: נא למלא את כל השדות החובה';
-                            break;
-                        case 3:
-                            echo 'שגיאה ביצירת המתאמנת';
-                            break;
-                        default:
-                            echo 'שגיאה כללית';
-                    }
-                    ?>
-                </strong>
-                <p style="margin: 5px 0 0 0; font-size: 0.9rem;">
-                    <?php 
-                    switch($error_type) {
-                        case 2:
-                            echo 'שם פרטי, שם משפחה וטלפון הם שדות חובה.';
-                            break;
-                        case 3:
-                            echo 'אירעה שגיאה טכנית ביצירת המתאמנת. נסה שוב.';
-                            break;
-                        default:
-                            echo 'תוסף Advanced Custom Fields לא זמין או אירעה שגיאה טכנית.';
-                    }
-                    ?>
-                </p>
+            <div class="error-message">
+                <div class="error-icon">❌</div>
+                <div class="error-text">
+                    <strong>שגיאה!</strong><br>
+                    <span>
+                        <?php 
+                        switch($error_type) {
+                            case 1: echo 'שדות חובה חסרים'; break;
+                            case 2: echo 'שגיאה בשמירת הנתונים'; break;
+                            case 3: echo 'מתאמנת עם אותו טלפון כבר קיימת'; break;
+                            default: echo 'אירעה שגיאה לא צפויה'; break;
+                        }
+                        ?>
+                    </span>
+                </div>
             </div>
         <?php endif; ?>
 
@@ -696,14 +311,16 @@ $finished_clients = get_finished_clients_with_follow_up($client_type_filter);
             <?php if ($finished_clients): ?>
                 <?php foreach ($finished_clients as $client): 
                     $client_id = $client->ID;
-                    $first_name = get_field('first_name', $client_id);
-                    $last_name = get_field('last_name', $client_id);
-                    $phone = get_field('phone', $client_id);
-                    $end_date = get_field('end_date', $client_id);
-                    $last_contact = get_field('last_contact_date', $client_id);
-                    $next_contact = get_field('next_contact_date', $client_id);
-                    $follow_up_notes = get_field('follow_up_notes', $client_id);
-                    $is_contact_lead = get_field('is_contact_lead', $client_id);
+                    // שימוש בנתונים המאופטמים במקום get_field - חיסכון עצום בשאילתות!
+                    $client_data = isset($clients_meta_data[$client_id]) ? $clients_meta_data[$client_id] : array();
+                    $first_name = isset($client_data['first_name']) ? $client_data['first_name'] : '';
+                    $last_name = isset($client_data['last_name']) ? $client_data['last_name'] : '';
+                    $phone = isset($client_data['phone']) ? $client_data['phone'] : '';
+                    $end_date = isset($client_data['end_date']) ? $client_data['end_date'] : '';
+                    $last_contact = isset($client_data['last_contact_date']) ? $client_data['last_contact_date'] : '';
+                    $next_contact = isset($client_data['next_contact_date']) ? $client_data['next_contact_date'] : '';
+                    $follow_up_notes = isset($client_data['follow_up_notes']) ? $client_data['follow_up_notes'] : '';
+                    $is_contact_lead = isset($client_data['is_contact_lead']) && $client_data['is_contact_lead'] == '1';
                     
                     // חישוב סטטוס מעקב
                     $contact_status = 'no-contact';
@@ -1395,17 +1012,6 @@ window.onclick = function(event) {
     </div>
 </div>
 
-<style>
-@keyframes modalSlideIn {
-    from {
-        opacity: 0;
-        transform: translateY(-50px) scale(0.9);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0) scale(1);
-    }
-}
-</style>
+
 
 <?php get_footer(); ?> 
