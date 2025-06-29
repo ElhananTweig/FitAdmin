@@ -204,16 +204,13 @@ function openAddContactLeadModal() {
         modal.style.display = 'block';
         document.body.style.overflow = 'hidden';
         
-        // איפוס והגדרת ברירות מחדל
-        const form = document.getElementById('addContactLeadForm');
-        if (form) {
-            form.reset();
-            
-            // תאריך קשר אחרון - היום
-            const lastContactInput = document.getElementById('lead_last_contact_date');
-            if (lastContactInput) {
-                lastContactInput.value = new Date().toISOString().split('T')[0];
-            }
+        // וידוא שהמודל במצב הוספה ולא עריכה
+        resetModalToAddMode();
+        
+        // הגדרת תאריך קשר אחרון - היום
+        const lastContactInput = document.getElementById('lead_last_contact_date');
+        if (lastContactInput) {
+            lastContactInput.value = new Date().toISOString().split('T')[0];
         }
     }
 }
@@ -223,6 +220,45 @@ function closeAddContactLeadModal() {
     if (modal) {
         modal.style.display = 'none';
         document.body.style.overflow = '';
+        
+        // איפוס המודל למצב הוספה
+        resetModalToAddMode();
+    }
+}
+
+// פונקציה לאיפוס המודל למצב הוספה
+function resetModalToAddMode() {
+    const modal = document.getElementById('addContactLeadModal');
+    if (modal) {
+        const form = document.getElementById('addContactLeadForm');
+        if (form) {
+            // איפוס הטופס
+            form.reset();
+            
+            // החזרת action להוספה
+            const actionInput = form.querySelector('input[name="action"]');
+            if (actionInput) {
+                actionInput.value = 'add_contact_lead';
+            }
+            
+            // הסרת שדה client_id אם קיים
+            const clientIdInput = document.getElementById('edit_client_id');
+            if (clientIdInput) {
+                clientIdInput.remove();
+            }
+        }
+        
+        // החזרת הכותרת המקורית
+        const modalTitle = modal.querySelector('h2');
+        if (modalTitle) {
+            modalTitle.innerHTML = '📞 הוסף מתאמנת פוטנציאלית';
+        }
+        
+        // החזרת טקסט הכפתור המקורי
+        const submitBtn = modal.querySelector('button[type="submit"]');
+        if (submitBtn) {
+            submitBtn.innerHTML = '✅ הוסף מתאמנת פוטנציאלית';
+        }
     }
 }
 
@@ -288,18 +324,67 @@ function deleteClient(clientId, clientName) {
     });
 }
 
-// פונקציה לפתיחת מודל עריכה
-function openEditClientModal(clientId) {
-    if (typeof window.openClientModal === 'function') {
-        window.openClientModal(true, clientId);
-    } else {
-        console.warn('מודל עריכה לא זמין - הפונקציה openClientModal לא נמצאה');
+// פונקציה לפתיחת מודל עריכה עם נתונים קיימים
+function openEditModal(clientId, firstName, lastName, phone, lastContact, nextContact, notes, isLead) {
+    const modal = document.getElementById('addContactLeadModal');
+    if (modal) {
+        modal.style.display = 'block';
+        document.body.style.overflow = 'hidden';
         
-        // fallback - הפניה לעמוד עריכה אם אין מודל
-        if (confirm('האם לפתוח עריכה בעמוד נפרד?')) {
-            window.location.href = `/clients/?edit=${clientId}`;
+        // מילוי הטופס עם הנתונים הקיימים
+        const form = document.getElementById('addContactLeadForm');
+        if (form) {
+            // הוספת שדה חבוי למזהה המתאמנת
+            let clientIdInput = document.getElementById('edit_client_id');
+            if (!clientIdInput) {
+                clientIdInput = document.createElement('input');
+                clientIdInput.type = 'hidden';
+                clientIdInput.name = 'client_id';
+                clientIdInput.id = 'edit_client_id';
+                form.appendChild(clientIdInput);
+            }
+            clientIdInput.value = clientId;
+            
+            // מילוי השדות
+            const firstNameInput = form.querySelector('input[name="first_name"]');
+            const lastNameInput = form.querySelector('input[name="last_name"]');
+            const phoneInput = form.querySelector('input[name="phone"]');
+            const lastContactInput = form.querySelector('input[name="last_contact_date"]');
+            const nextContactInput = form.querySelector('input[name="next_contact_date"]');
+            const notesInput = form.querySelector('textarea[name="follow_up_notes"]');
+            
+            if (firstNameInput) firstNameInput.value = firstName || '';
+            if (lastNameInput) lastNameInput.value = lastName || '';
+            if (phoneInput) phoneInput.value = phone || '';
+            if (lastContactInput) lastContactInput.value = lastContact || '';
+            if (nextContactInput) nextContactInput.value = nextContact || '';
+            if (notesInput) notesInput.value = notes || '';
+            
+            // שינוי action הטופס לעדכון במקום הוספה
+            const actionInput = form.querySelector('input[name="action"]');
+            if (actionInput) {
+                actionInput.value = 'update_follow_up';
+            }
+        }
+        
+        // שינוי הכותרת למודל עריכה
+        const modalTitle = modal.querySelector('h2');
+        if (modalTitle) {
+            modalTitle.innerHTML = `✏️ עריכת מעקב - ${firstName} ${lastName}`;
+        }
+        
+        // שינוי טקסט הכפתור
+        const submitBtn = modal.querySelector('button[type="submit"]');
+        if (submitBtn) {
+            submitBtn.innerHTML = '💾 עדכן מעקב';
         }
     }
+}
+
+// פונקציה לפתיחת מודל עריכה - fallback לגרסה ישנה
+function openEditClientModal(clientId) {
+    // נסיון להשתמש במודל החדש
+    openEditModal(clientId, '', '', '', '', '', '', false);
 }
 
 // פונקציות עזר לפידבק למשתמש
@@ -418,4 +503,6 @@ window.closeAddFinishedClientModal = closeAddFinishedClientModal;
 window.openAddContactLeadModal = openAddContactLeadModal;
 window.closeAddContactLeadModal = closeAddContactLeadModal;
 window.deleteClient = deleteClient;
-window.openEditClientModal = openEditClientModal; 
+window.openEditClientModal = openEditClientModal;
+window.openEditModal = openEditModal;
+window.resetModalToAddMode = resetModalToAddMode; 

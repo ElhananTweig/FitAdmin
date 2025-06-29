@@ -309,6 +309,7 @@ wp_enqueue_script('finished-clients-script', get_template_directory_uri() . '/as
         <!-- רשימת מתאמנות -->
         <div id="clientsList">
             <?php if ($finished_clients): ?>
+                <div class="clients-grid">
                 <?php foreach ($finished_clients as $client): 
                     $client_id = $client->ID;
                     // שימוש בנתונים המאופטמים במקום get_field - חיסכון עצום בשאילתות!
@@ -350,18 +351,12 @@ wp_enqueue_script('finished-clients-script', get_template_directory_uri() . '/as
                          data-is-lead="<?php echo $is_contact_lead ? 'true' : 'false'; ?>">
                         <div class="client-header">
                             <div class="client-main-info">
-                                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
-                                    <div class="client-name-main"><?php echo $first_name . ' ' . $last_name; ?></div>
-                                    <?php if ($is_contact_lead): ?>
-                                        <span style="background: linear-gradient(135deg, #10b981, #059669); color: white; padding: 4px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: 600;">
-                                            📞 פוטנציאלית
-                                        </span>
-                                    <?php else: ?>
-                                        <span style="background: linear-gradient(135deg, #3b82f6, #1d4ed8); color: white; padding: 4px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: 600;">
-                                            💪 סיימה
-                                        </span>
-                                    <?php endif; ?>
-                                </div>
+                                <div class="client-name-main"><?php echo $first_name . ' ' . $last_name; ?></div>
+                                <?php if ($is_contact_lead): ?>
+                                    <span class="badge-lead">📞 פוטנציאלית</span>
+                                <?php else: ?>
+                                    <span class="badge-finished">💪 סיימה</span>
+                                <?php endif; ?>
                                 <a href="tel:<?php echo $phone; ?>" class="client-phone-main">
                                     📞 <?php echo $phone; ?>
                                 </a>
@@ -369,16 +364,11 @@ wp_enqueue_script('finished-clients-script', get_template_directory_uri() . '/as
                                     <?php echo $contact_status_text; ?>
                                 </div>
                             </div>
-                            <div class="end-date-badge">
-                                <?php if ($is_contact_lead): ?>
-                                    📞 מתאמנת למעקב
-                                <?php else: ?>
-                                    סיום טיפול: <?php echo date('d/m/Y', strtotime($end_date)); ?>
-                                <?php endif; ?>
-                            </div>
                             <div class="client-actions">
-                                <button type="button" onclick="openEditClientModal(<?php echo $client_id; ?>)" class="action-btn primary">
-                                    ✏️ ערוך
+                                <button type="button" 
+                                        onclick="openEditModal(<?php echo $client_id; ?>, '<?php echo esc_js($first_name); ?>', '<?php echo esc_js($last_name); ?>', '<?php echo esc_js($phone); ?>', '<?php echo esc_js($last_contact); ?>', '<?php echo esc_js($next_contact); ?>', '<?php echo esc_js($follow_up_notes); ?>', <?php echo $is_contact_lead ? 'true' : 'false'; ?>)" 
+                                        class="btn-glow edit" title="ערוך מתאמנת">
+                                    ✏️
                                 </button>
                                 <?php 
                                 // המרת מספר טלפון ישראלי לפורמט בינלאומי עבור וואצאפ
@@ -387,61 +377,50 @@ wp_enqueue_script('finished-clients-script', get_template_directory_uri() . '/as
                                     $whatsapp_number = '972' . substr($phone, 1);
                                 }
                                 ?>
-                                <a href="https://wa.me/<?php echo $whatsapp_number; ?>" target="_blank" class="action-btn whatsapp">
-                                    💬 וואצאפ
+                                <a href="https://wa.me/<?php echo $whatsapp_number; ?>" target="_blank" class="btn-glow whatsapp" title="שלח וואצאפ">
+                                    💬
                                 </a>
-                                <button type="button" onclick="deleteClient(<?php echo $client_id; ?>, '<?php echo esc_js($first_name . ' ' . $last_name); ?>')" class="action-btn danger">
-                                    🗑️ מחק
+                                <button type="button" onclick="deleteClient(<?php echo $client_id; ?>, '<?php echo esc_js($first_name . ' ' . $last_name); ?>')" class="btn-glow delete" title="מחק מתאמנת">
+                                    🗑️
                                 </button>
                             </div>
                         </div>
 
                         <div class="follow-up-section">
-                            <!-- מידע מעקב נוכחי -->
                             <div class="follow-up-info">
-                                <h4 style="margin-top: 0; color: #374151;">📋 מידע מעקב</h4>
-                                <p><strong>קשר אחרון:</strong> <?php echo $last_contact ? date('d/m/Y', strtotime($last_contact)) : 'לא נרשם'; ?></p>
-                                <p><strong>מעקב הבא:</strong> <?php echo $next_contact ? date('d/m/Y', strtotime($next_contact)) : 'לא נקבע'; ?></p>
-                                <?php if ($follow_up_notes): ?>
-                                    <p><strong>הערות:</strong><br><?php echo nl2br(esc_html($follow_up_notes)); ?></p>
+                                <div class="follow-up-item">
+                                    <div class="follow-up-label">קשר אחרון</div>
+                                    <div class="follow-up-value"><?php echo $last_contact ? date('d/m/Y', strtotime($last_contact)) : 'לא נרשם'; ?></div>
+                                </div>
+                                
+                                <div class="follow-up-item">
+                                    <div class="follow-up-label">מעקב הבא</div>
+                                    <div class="follow-up-value"><?php echo $next_contact ? date('d/m/Y', strtotime($next_contact)) : 'לא נקבע'; ?></div>
+                                </div>
+                                
+                                <?php if (!$is_contact_lead && $end_date): ?>
+                                <div class="follow-up-item">
+                                    <div class="follow-up-label">סיום טיפול</div>
+                                    <div class="follow-up-value"><?php echo date('d/m/Y', strtotime($end_date)); ?></div>
+                                </div>
                                 <?php endif; ?>
-                            </div>
-
-                            <!-- טופס עדכון -->
-                            <div class="follow-up-form">
-                                <h4 style="margin-top: 0; color: #374151;">✏️ עדכון מעקב</h4>
-                                <form method="post" action="">
-                                    <?php wp_nonce_field('update_follow_up', 'follow_up_nonce'); ?>
-                                    <input type="hidden" name="client_id" value="<?php echo $client_id; ?>">
-                                    
-                                    <div class="form-group">
-                                        <label>תאריך קשר אחרון</label>
-                                        <input type="date" name="last_contact_date" value="<?php echo $last_contact; ?>">
-                                    </div>
-                                    
-                                    <div class="form-group">
-                                        <label>תאריך מעקב הבא</label>
-                                        <input type="date" name="next_contact_date" value="<?php echo $next_contact; ?>">
-                                    </div>
-                                    
-                                    <div class="form-group">
-                                        <label>הערות מעקב</label>
-                                        <textarea name="follow_up_notes" placeholder="הערות על השיחה, תוכניות עתידיות..."><?php echo esc_textarea($follow_up_notes); ?></textarea>
-                                    </div>
-                                    
-                                    <button type="submit" name="update_follow_up" class="update-btn">
-                                        💾 עדכן מעקב
-                                    </button>
-                                </form>
+                                
+                                <?php if ($follow_up_notes): ?>
+                                <div class="follow-up-item follow-up-notes">
+                                    <div class="follow-up-label">הערות</div>
+                                    <div class="follow-up-value"><?php echo nl2br(esc_html($follow_up_notes)); ?></div>
+                                </div>
+                                <?php endif; ?>
                             </div>
                         </div>
                     </div>
                 <?php endforeach; ?>
+                </div>
             <?php else: ?>
-                <div style="text-align: center; padding: 60px 20px; background: white; border-radius: 15px;">
+                <div class="no-clients-message">
                     <div style="font-size: 4rem; margin-bottom: 20px;">🎉</div>
-                    <h3 style="color: #374151; margin-bottom: 10px;">אין מתאמנות שסיימו עדיין</h3>
-                    <p style="color: #6b7280;">כשמתאמנות יגיעו לתאריך הסיום שלהן, הן יופיעו כאן</p>
+                    <h3>אין מתאמנות שסיימו עדיין</h3>
+                    <p>כשמתאמנות יגיעו לתאריך הסיום שלהן, הן יופיעו כאן</p>
                 </div>
             <?php endif; ?>
         </div>
