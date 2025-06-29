@@ -8,10 +8,28 @@
  */
 
 // טיפול בעדכון הערות ומעקב - לפני get_header כדי למנוע בעיות headers
-if (isset($_POST['update_follow_up']) && wp_verify_nonce($_POST['follow_up_nonce'], 'update_follow_up')) {
+if (isset($_POST['action']) && $_POST['action'] === 'update_follow_up' && wp_verify_nonce($_POST['add_contact_lead_nonce'], 'add_contact_lead_action')) {
     // בדיקה שפונקציות ACF זמינות
     if (function_exists('update_field')) {
         $client_id = intval($_POST['client_id']);
+        
+        // אפשר עדכון של כל השדות, לא רק מעקב
+        if (isset($_POST['first_name'])) {
+            $first_name = sanitize_text_field($_POST['first_name']);
+            $last_name = sanitize_text_field($_POST['last_name']);
+            $phone = sanitize_text_field($_POST['phone']);
+            
+            update_field('first_name', $first_name, $client_id);
+            update_field('last_name', $last_name, $client_id);
+            update_field('phone', $phone, $client_id);
+            
+            // עדכון כותרת הפוסט
+            wp_update_post(array(
+                'ID' => $client_id,
+                'post_title' => $first_name . ' ' . $last_name
+            ));
+        }
+        
         $follow_up_notes = sanitize_textarea_field($_POST['follow_up_notes']);
         $last_contact_date = sanitize_text_field($_POST['last_contact_date']);
         $next_contact_date = sanitize_text_field($_POST['next_contact_date']);

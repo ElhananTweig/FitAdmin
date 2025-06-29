@@ -218,7 +218,7 @@ wp_enqueue_script('finished-clients-script', get_template_directory_uri() . '/as
 
         <!-- פילטרים -->
         <div class="filters-section">
-            <h3 style="margin-top: 0; margin-bottom: 15px; color: #374151;">🔍 פילטרים</h3>
+            <h3 style="margin-top: 0; margin-bottom: 15px; color: rgba(255, 255, 255, 0.9);">🔍 פילטרים</h3>
             
             <!-- פילטר סוג מתאמנת -->
             <div style="margin-bottom: 20px; padding: 15px; background: #f8fafc; border-radius: 10px; border: 1px solid #e2e8f0;">

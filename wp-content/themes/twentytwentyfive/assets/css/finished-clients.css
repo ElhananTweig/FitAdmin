@@ -147,6 +147,13 @@
     backdrop-filter: blur(10px);
 }
 
+.filter-group select option {
+    background: #374151;
+    color: #d7dedc;
+    padding: 8px;
+    font-weight: 500;
+}
+
 .filter-group input::placeholder {
     color: rgba(255, 255, 255, 0.6);
 }
