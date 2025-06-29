@@ -9,7 +9,29 @@ function get_clients_stats() {
     $clients = get_posts(array(
         'post_type' => 'clients',
         'posts_per_page' => -1,
-        'post_status' => 'publish'
+        'post_status' => 'publish',
+        'meta_query' => array(
+            'relation' => 'OR',
+            array(
+                'key' => 'is_contact_lead',
+                'value' => false,
+                'compare' => '='
+            ),
+            array(
+                'key' => 'is_contact_lead',
+                'value' => 'false',
+                'compare' => '='
+            ),
+            array(
+                'key' => 'is_contact_lead',
+                'value' => '',
+                'compare' => '='
+            ),
+            array(
+                'key' => 'is_contact_lead',
+                'compare' => 'NOT EXISTS'
+            )
+        )
     ));
     
     $stats = array(
@@ -100,6 +122,29 @@ function get_ending_soon_clients() {
                     'key' => 'is_frozen',
                     'compare' => 'NOT EXISTS'
                 )
+            ),
+            // הוצאת מתאמנות פוטנציאליות
+            array(
+                'relation' => 'OR',
+                array(
+                    'key' => 'is_contact_lead',
+                    'value' => false,
+                    'compare' => '='
+                ),
+                array(
+                    'key' => 'is_contact_lead',
+                    'value' => 'false',
+                    'compare' => '='
+                ),
+                array(
+                    'key' => 'is_contact_lead',
+                    'value' => '',
+                    'compare' => '='
+                ),
+                array(
+                    'key' => 'is_contact_lead',
+                    'compare' => 'NOT EXISTS'
+                )
             )
         ),
         'meta_key' => 'end_date',
@@ -114,21 +159,47 @@ function get_frozen_clients() {
         'posts_per_page' => 5,
         'post_status' => 'publish',
         'meta_query' => array(
-            'relation' => 'OR',
+            'relation' => 'AND',
             array(
-                'key' => 'is_frozen',
-                'value' => true,
-                'compare' => '='
+                'relation' => 'OR',
+                array(
+                    'key' => 'is_frozen',
+                    'value' => true,
+                    'compare' => '='
+                ),
+                array(
+                    'key' => 'is_frozen',
+                    'value' => 'true',
+                    'compare' => '='
+                ),
+                array(
+                    'key' => 'is_frozen',
+                    'value' => '1',
+                    'compare' => '='
+                )
             ),
+            // הוצאת מתאמנות פוטנציאליות
             array(
-                'key' => 'is_frozen',
-                'value' => 'true',
-                'compare' => '='
-            ),
-            array(
-                'key' => 'is_frozen',
-                'value' => '1',
-                'compare' => '='
+                'relation' => 'OR',
+                array(
+                    'key' => 'is_contact_lead',
+                    'value' => false,
+                    'compare' => '='
+                ),
+                array(
+                    'key' => 'is_contact_lead',
+                    'value' => 'false',
+                    'compare' => '='
+                ),
+                array(
+                    'key' => 'is_contact_lead',
+                    'value' => '',
+                    'compare' => '='
+                ),
+                array(
+                    'key' => 'is_contact_lead',
+                    'compare' => 'NOT EXISTS'
+                )
             )
         )
     ));

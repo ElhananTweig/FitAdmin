@@ -562,6 +562,29 @@ get_header(); ?>
                         'key' => 'is_frozen',
                         'compare' => 'NOT EXISTS'
                     )
+                ),
+                // הוצאת מתאמנות פוטנציאליות
+                array(
+                    'relation' => 'OR',
+                    array(
+                        'key' => 'is_contact_lead',
+                        'value' => false,
+                        'compare' => '='
+                    ),
+                    array(
+                        'key' => 'is_contact_lead',
+                        'value' => 'false',
+                        'compare' => '='
+                    ),
+                    array(
+                        'key' => 'is_contact_lead',
+                        'value' => '',
+                        'compare' => '='
+                    ),
+                    array(
+                        'key' => 'is_contact_lead',
+                        'compare' => 'NOT EXISTS'
+                    )
                 )
             ),
             'meta_key' => 'end_date',
@@ -576,21 +599,47 @@ get_header(); ?>
             'posts_per_page' => 5,
             'post_status' => 'publish',
             'meta_query' => array(
-                'relation' => 'OR',
+                'relation' => 'AND',
                 array(
-                    'key' => 'is_frozen',
-                    'value' => true,
-                    'compare' => '='
+                    'relation' => 'OR',
+                    array(
+                        'key' => 'is_frozen',
+                        'value' => true,
+                        'compare' => '='
+                    ),
+                    array(
+                        'key' => 'is_frozen',
+                        'value' => 'true',
+                        'compare' => '='
+                    ),
+                    array(
+                        'key' => 'is_frozen',
+                        'value' => '1',
+                        'compare' => '='
+                    )
                 ),
+                // הוצאת מתאמנות פוטנציאליות
                 array(
-                    'key' => 'is_frozen',
-                    'value' => 'true',
-                    'compare' => '='
-                ),
-                array(
-                    'key' => 'is_frozen',
-                    'value' => '1',
-                    'compare' => '='
+                    'relation' => 'OR',
+                    array(
+                        'key' => 'is_contact_lead',
+                        'value' => false,
+                        'compare' => '='
+                    ),
+                    array(
+                        'key' => 'is_contact_lead',
+                        'value' => 'false',
+                        'compare' => '='
+                    ),
+                    array(
+                        'key' => 'is_contact_lead',
+                        'value' => '',
+                        'compare' => '='
+                    ),
+                    array(
+                        'key' => 'is_contact_lead',
+                        'compare' => 'NOT EXISTS'
+                    )
                 )
             )
         ));
@@ -609,7 +658,7 @@ get_header(); ?>
         }
         $today = date('Y-m-d');
         
-        // מתאמנות חדשות השבוע - גם לפי תאריך יצירה וגם לפי תאריך התחלה
+        // מתאמנות חדשות השבוע - גם לפי תאריך יצירה וגם לפי תאריך התחלה (ללא פוטנציאליות)
         $new_clients_by_creation = get_posts(array(
             'post_type' => 'clients',
             'posts_per_page' => -1,
@@ -620,6 +669,28 @@ get_header(); ?>
                     'before' => $today . ' 23:59:59',
                     'inclusive' => true
                 )
+            ),
+            'meta_query' => array(
+                'relation' => 'OR',
+                array(
+                    'key' => 'is_contact_lead',
+                    'value' => false,
+                    'compare' => '='
+                ),
+                array(
+                    'key' => 'is_contact_lead',
+                    'value' => 'false',
+                    'compare' => '='
+                ),
+                array(
+                    'key' => 'is_contact_lead',
+                    'value' => '',
+                    'compare' => '='
+                ),
+                array(
+                    'key' => 'is_contact_lead',
+                    'compare' => 'NOT EXISTS'
+                )
             )
         ));
         
@@ -628,11 +699,35 @@ get_header(); ?>
             'posts_per_page' => -1,
             'post_status' => 'publish',
             'meta_query' => array(
+                'relation' => 'AND',
                 array(
                     'key' => 'start_date',
                     'value' => array($week_start, $today),
                     'compare' => 'BETWEEN',
                     'type' => 'DATE'
+                ),
+                // הוצאת מתאמנות פוטנציאליות
+                array(
+                    'relation' => 'OR',
+                    array(
+                        'key' => 'is_contact_lead',
+                        'value' => false,
+                        'compare' => '='
+                    ),
+                    array(
+                        'key' => 'is_contact_lead',
+                        'value' => 'false',
+                        'compare' => '='
+                    ),
+                    array(
+                        'key' => 'is_contact_lead',
+                        'value' => '',
+                        'compare' => '='
+                    ),
+                    array(
+                        'key' => 'is_contact_lead',
+                        'compare' => 'NOT EXISTS'
+                    )
                 )
             )
         ));
@@ -707,27 +802,75 @@ get_header(); ?>
             'posts_per_page' => -1,
             'post_status' => 'publish',
             'meta_query' => array(
+                'relation' => 'AND',
                 array(
                     'key' => 'payment_date',
                     'value' => array($week_start, $today),
                     'compare' => 'BETWEEN',
                     'type' => 'DATE'
+                ),
+                // הוצאת מתאמנות פוטנציאליות
+                array(
+                    'relation' => 'OR',
+                    array(
+                        'key' => 'is_contact_lead',
+                        'value' => false,
+                        'compare' => '='
+                    ),
+                    array(
+                        'key' => 'is_contact_lead',
+                        'value' => 'false',
+                        'compare' => '='
+                    ),
+                    array(
+                        'key' => 'is_contact_lead',
+                        'value' => '',
+                        'compare' => '='
+                    ),
+                    array(
+                        'key' => 'is_contact_lead',
+                        'compare' => 'NOT EXISTS'
+                    )
                 )
             )
         ));
         
-        // תשלומים שהתעדכנו השבוע - גישה משופרת
+        // תשלומים שהתעדכנו השבוע - גישה משופרת (ללא פוטנציאליות)
         // נחפש את כל המתאמנות עם תשלומים ונבדוק אם הן התעדכנו השבוע
         $all_clients_with_payments = get_posts(array(
             'post_type' => 'clients',
             'posts_per_page' => -1,
             'post_status' => 'publish',
             'meta_query' => array(
+                'relation' => 'AND',
                 array(
                     'key' => 'amount_paid',
                     'value' => 0,
                     'compare' => '>',
                     'type' => 'NUMERIC'
+                ),
+                // הוצאת מתאמנות פוטנציאליות
+                array(
+                    'relation' => 'OR',
+                    array(
+                        'key' => 'is_contact_lead',
+                        'value' => false,
+                        'compare' => '='
+                    ),
+                    array(
+                        'key' => 'is_contact_lead',
+                        'value' => 'false',
+                        'compare' => '='
+                    ),
+                    array(
+                        'key' => 'is_contact_lead',
+                        'value' => '',
+                        'compare' => '='
+                    ),
+                    array(
+                        'key' => 'is_contact_lead',
+                        'compare' => 'NOT EXISTS'
+                    )
                 )
             )
         ));
@@ -999,6 +1142,29 @@ get_header(); ?>
                             ),
                             array(
                                 'key' => 'is_frozen',
+                                'compare' => 'NOT EXISTS'
+                            )
+                        ),
+                        // הוצאת מתאמנות פוטנציאליות - רק מתאמנות שסיימו באמת
+                        array(
+                            'relation' => 'OR',
+                            array(
+                                'key' => 'is_contact_lead',
+                                'value' => false,
+                                'compare' => '='
+                            ),
+                            array(
+                                'key' => 'is_contact_lead',
+                                'value' => 'false',
+                                'compare' => '='
+                            ),
+                            array(
+                                'key' => 'is_contact_lead',
+                                'value' => '',
+                                'compare' => '='
+                            ),
+                            array(
+                                'key' => 'is_contact_lead',
                                 'compare' => 'NOT EXISTS'
                             )
                         )

@@ -566,6 +566,38 @@ function modify_clients_query($query) {
     if (!is_admin() && $query->is_main_query()) {
         if (is_post_type_archive('clients')) {
             $query->set('posts_per_page', -1); // הצגת כל המתאמנות
+            
+            // הוספת meta_query לסינון מתאמנות פוטנציאליות
+            $existing_meta_query = $query->get('meta_query');
+            if (!is_array($existing_meta_query)) {
+                $existing_meta_query = array();
+            }
+            
+            // הוספת תנאי לא לכלול מתאמנות פוטנציאליות
+            $existing_meta_query[] = array(
+                'relation' => 'OR',
+                array(
+                    'key' => 'is_contact_lead',
+                    'value' => false,
+                    'compare' => '='
+                ),
+                array(
+                    'key' => 'is_contact_lead',
+                    'value' => 'false',
+                    'compare' => '='
+                ),
+                array(
+                    'key' => 'is_contact_lead',
+                    'value' => '',
+                    'compare' => '='
+                ),
+                array(
+                    'key' => 'is_contact_lead',
+                    'compare' => 'NOT EXISTS'
+                )
+            );
+            
+            $query->set('meta_query', $existing_meta_query);
         }
     }
 }
@@ -850,6 +882,18 @@ function add_client_custom_fields() {
                     ),
                     'default_value' => 'personal',
                     'required' => 1,
+                ),
+                // שדה לזיהוי מתאמנת פוטנציאלית למעקב
+                array(
+                    'key' => 'field_is_contact_lead',
+                    'label' => 'מתאמנת פוטנציאלית',
+                    'name' => 'is_contact_lead',
+                    'type' => 'true_false',
+                    'instructions' => 'האם זו מתאמנת פוטנציאלית למעקב (לא הייתה אצלך בטיפול)?',
+                    'default_value' => 0,
+                    'ui' => 1,
+                    'ui_on_text' => 'מתאמנת פוטנציאלית',
+                    'ui_off_text' => 'מתאמנת רגילה',
                 ),
                 array(
                     'key' => 'field_group_id',

@@ -236,15 +236,39 @@ get_header(); ?>
                 $payment_percentage = get_field('payment_percentage');
                 $notes = get_field('mentor_notes');
                 
-                // ספירת מתאמנות למנטורית
+                // ספירת מתאמנות למנטורית (ללא פוטנציאליות)
                 $clients_count = get_posts(array(
                     'post_type' => 'clients',
                     'posts_per_page' => -1,
                     'meta_query' => array(
+                        'relation' => 'AND',
                         array(
                             'key' => 'mentor',
                             'value' => $mentor_id,
                             'compare' => '='
+                        ),
+                        // הוצאת מתאמנות פוטנציאליות
+                        array(
+                            'relation' => 'OR',
+                            array(
+                                'key' => 'is_contact_lead',
+                                'value' => false,
+                                'compare' => '='
+                            ),
+                            array(
+                                'key' => 'is_contact_lead',
+                                'value' => 'false',
+                                'compare' => '='
+                            ),
+                            array(
+                                'key' => 'is_contact_lead',
+                                'value' => '',
+                                'compare' => '='
+                            ),
+                            array(
+                                'key' => 'is_contact_lead',
+                                'compare' => 'NOT EXISTS'
+                            )
                         )
                     )
                 ));

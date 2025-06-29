@@ -331,11 +331,33 @@ get_header(); ?>
     </div>
 
     <?php
-    // שאילתה מותאמת לסטטיסטיקות
+    // שאילתה מותאמת לסטטיסטיקות (ללא מתאמנות פוטנציאליות)
     $all_clients = get_posts(array(
         'post_type' => 'clients',
         'posts_per_page' => -1,
-        'post_status' => 'publish'
+        'post_status' => 'publish',
+        'meta_query' => array(
+            'relation' => 'OR',
+            array(
+                'key' => 'is_contact_lead',
+                'value' => false,
+                'compare' => '='
+            ),
+            array(
+                'key' => 'is_contact_lead',
+                'value' => 'false',
+                'compare' => '='
+            ),
+            array(
+                'key' => 'is_contact_lead',
+                'value' => '',
+                'compare' => '='
+            ),
+            array(
+                'key' => 'is_contact_lead',
+                'compare' => 'NOT EXISTS'
+            )
+        )
     ));
     
     $today = date('Y-m-d');
