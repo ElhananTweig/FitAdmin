@@ -403,7 +403,7 @@ window.openEditClientModal = function(clientId) {
     }
 };
 
-// פונקציה לפתיחת פופאפ צפייה בפרטים מלאים
+// פונקציה לפתיחת פופאפ צפייה בהערות
 window.openViewClientModal = function(clientId) {
     // יצירת מודל צפייה
     const viewModal = document.createElement('div');
@@ -415,12 +415,12 @@ window.openViewClientModal = function(clientId) {
         <div class="modal-backdrop"></div>
         <div class="modal-container">
             <div class="modal-header">
-                <h2>👁️ פרטי מתאמנת - צפייה</h2>
+                <h2>📝 הערות המתאמנת</h2>
                 <button type="button" class="modal-close" onclick="closeViewModal()">×</button>
             </div>
             <div class="modal-body">
                 <div id="view-loading" style="text-align: center; padding: 40px; color: #d7dedc;">
-                    🔄 טוען פרטי מתאמנת...
+                    🔄 טוען הערות...
                 </div>
             </div>
         </div>
@@ -429,8 +429,8 @@ window.openViewClientModal = function(clientId) {
     document.body.appendChild(viewModal);
     document.body.style.overflow = 'hidden';
     
-    // טעינת נתוני המתאמנת
-    loadClientDataForView(clientId);
+    // טעינת הערות המתאמנת
+    loadClientNotesForView(clientId);
 };
 
 // פונקציה לסגירת מודל הצפייה
@@ -442,8 +442,8 @@ window.closeViewModal = function() {
     }
 };
 
-// פונקציה לטעינת נתוני מתאמנת לצפייה
-async function loadClientDataForView(clientId) {
+// פונקציה לטעינת הערות מתאמנת לצפייה
+async function loadClientNotesForView(clientId) {
     try {
         const formData = new FormData();
         formData.append('action', 'get_client_data_ajax');
@@ -463,9 +463,9 @@ async function loadClientDataForView(clientId) {
         const data = await response.json();
 
         if (data.success) {
-            displayClientData(data.data);
+            displayClientNotes(data.data);
         } else {
-            document.getElementById('view-loading').innerHTML = '❌ שגיאה בטעינת נתוני המתאמנת';
+            document.getElementById('view-loading').innerHTML = '❌ שגיאה בטעינת הערות המתאמנת';
         }
     } catch (error) {
         console.error('שגיאה:', error);
@@ -473,159 +473,51 @@ async function loadClientDataForView(clientId) {
     }
 }
 
-// פונקציה להצגת נתוני המתאמנת
-function displayClientData(clientData) {
+// פונקציה להצגת הערות המתאמנת
+function displayClientNotes(clientData) {
     const modalBody = document.querySelector('#view-client-modal .modal-body');
     
-    // פרמטרים לתצוגה
-    const sourceLabels = {
-        'instagram': 'אינסטגרם',
-        'status': 'סטטוס',
-        'whatsapp': 'וואצאפ',
-        'referral': 'המלצה',
-        'mentor': 'מנטורית',
-        'unknown': 'לא ידוע'
-    };
-    
-    const trainingLabels = {
-        'personal': 'ליווי אישי',
-        'group': 'קבוצה'
-    };
+    const clientName = `${clientData.first_name || ''} ${clientData.last_name || ''}`.trim() || 'לא צוין';
     
     modalBody.innerHTML = `
-        <div class="view-sections">
-            <!-- פרטים אישיים -->
-            <div class="view-section">
-                <h3 class="section-title">👤 פרטים אישיים</h3>
-                <div class="view-grid">
-                    <div class="view-item">
-                        <strong>שם פרטי:</strong>
-                        <span>${clientData.first_name || 'לא צוין'}</span>
-                    </div>
-                    <div class="view-item">
-                        <strong>שם משפחה:</strong>
-                        <span>${clientData.last_name || 'לא צוין'}</span>
-                    </div>
-                    <div class="view-item">
-                        <strong>טלפון:</strong>
-                        <span><a href="tel:${clientData.phone}">${clientData.phone || 'לא צוין'}</a></span>
-                    </div>
-                    <div class="view-item">
-                        <strong>אימייל:</strong>
-                        <span><a href="mailto:${clientData.email}">${clientData.email || 'לא צוין'}</a></span>
-                    </div>
-                    <div class="view-item">
-                        <strong>גיל:</strong>
-                        <span>${clientData.age || 'לא צוין'}</span>
-                    </div>
-                    <div class="view-item">
-                        <strong>מקור הגעה:</strong>
-                        <span>${sourceLabels[clientData.referral_source] || clientData.referral_source || 'לא צוין'}</span>
-                    </div>
+        <div class="notes-view-container">
+            <!-- פרטי המתאמנת -->
+            <div class="client-info-header">
+                <div class="client-name">
+                    <strong>👤 ${clientName}</strong>
+                </div>
+                <div class="client-phone">
+                    📞 <a href="tel:${clientData.phone}" style="color: #3b82f6; text-decoration: none;">${clientData.phone || 'לא צוין'}</a>
                 </div>
             </div>
             
-            <!-- פרטי תכנית -->
-            <div class="view-section">
-                <h3 class="section-title">📅 פרטי התכנית</h3>
-                <div class="view-grid">
-                    <div class="view-item">
-                        <strong>תאריך התחלה:</strong>
-                        <span>${clientData.start_date || 'לא צוין'}</span>
-                    </div>
-                    <div class="view-item">
-                        <strong>תאריך סיום:</strong>
-                        <span>${clientData.end_date || 'לא צוין'}</span>
-                    </div>
-                    <div class="view-item">
-                        <strong>סוג ליווי:</strong>
-                        <span>${trainingLabels[clientData.training_type] || clientData.training_type || 'לא צוין'}</span>
-                    </div>
-                    <div class="view-item">
-                        <strong>סטטוס:</strong>
-                        <span>${clientData.is_frozen ? '⏸️ בהקפאה' : '✅ פעילה'}</span>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- מדדי משקל -->
-            <div class="view-section">
-                <h3 class="section-title">⚖️ מדדי משקל</h3>
-                <div class="view-grid">
-                    <div class="view-item">
-                        <strong>משקל התחלה:</strong>
-                        <span>${clientData.start_weight ? clientData.start_weight + ' ק"ג' : 'לא צוין'}</span>
-                    </div>
-                    <div class="view-item">
-                        <strong>משקל נוכחי:</strong>
-                        <span>${clientData.current_weight ? clientData.current_weight + ' ק"ג' : 'לא צוין'}</span>
-                    </div>
-                    <div class="view-item">
-                        <strong>משקל יעד:</strong>
-                        <span>${clientData.target_weight ? clientData.target_weight + ' ק"ג' : 'לא צוין'}</span>
-                    </div>
-                    <div class="view-item">
-                        <strong>ירידה במשקל:</strong>
-                        <span>${(clientData.start_weight && clientData.current_weight) ? 
-                            (parseFloat(clientData.start_weight) - parseFloat(clientData.current_weight)).toFixed(1) + ' ק"ג' : 
-                            'לא ניתן לחשב'}</span>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- פרטי תשלום -->
-            <div class="view-section">
-                <h3 class="section-title">💰 פרטי תשלום</h3>
-                <div class="view-grid">
-                    <div class="view-item">
-                        <strong>סכום תכנית:</strong>
-                        <span>${clientData.payment_amount ? '₪' + parseFloat(clientData.payment_amount).toLocaleString() : 'לא צוין'}</span>
-                    </div>
-                    <div class="view-item">
-                        <strong>סכום ששולם:</strong>
-                        <span>${clientData.amount_paid ? '₪' + parseFloat(clientData.amount_paid).toLocaleString() : '₪0'}</span>
-                    </div>
-                    <div class="view-item">
-                        <strong>יתרה לתשלום:</strong>
-                        <span>${(clientData.payment_amount && clientData.amount_paid) ? 
-                            '₪' + (parseFloat(clientData.payment_amount) - parseFloat(clientData.amount_paid)).toLocaleString() : 
-                            'לא ניתן לחשב'}</span>
-                    </div>
-                    <div class="view-item">
-                        <strong>תאריך תשלום:</strong>
-                        <span>${clientData.payment_date || 'לא צוין'}</span>
-                    </div>
-                </div>
-            </div>
-            
-            ${clientData.notes ? `
             <!-- הערות -->
-            <div class="view-section">
-                <h3 class="section-title">📝 הערות</h3>
-                <div class="notes-display">
-                    ${clientData.notes.replace(/\n/g, '<br>')}
-                </div>
+            <div class="notes-section">
+                ${clientData.notes ? `
+                    <div class="notes-content">
+                        ${clientData.notes.replace(/\n/g, '<br>')}
+                    </div>
+                ` : `
+                    <div class="no-notes">
+                        <div class="no-notes-icon">📝</div>
+                        <div class="no-notes-text">אין הערות להצגה</div>
+                        <div class="no-notes-subtitle">ניתן להוסיף הערות באמצעות עריכת פרטי המתאמנת</div>
+                    </div>
+                `}
             </div>
-            ` : ''}
             
             <!-- פעולות מהירות -->
-            <div class="view-section">
-                <h3 class="section-title">🚀 פעולות מהירות</h3>
-                <div class="quick-actions-view">
-                    <a href="tel:${clientData.phone}" class="action-btn view">
-                        📞 התקשר
-                    </a>
-                    <a href="https://wa.me/${clientData.phone && clientData.phone.startsWith('0') ? '972' + clientData.phone.substring(1) : clientData.phone}" target="_blank" class="action-btn whatsapp">
-                        💬 וואצאפ
-                    </a>
-                    <button type="button" onclick="closeViewModal(); openEditClientModal(${clientData.client_id || clientData.ID});" class="action-btn primary">
-                        ✏️ ערוך פרטים
-                    </button>
-                </div>
+            <div class="quick-actions-notes">
+                <button type="button" onclick="closeViewModal(); openEditClientModal(${clientData.client_id || clientData.ID});" class="action-btn primary">
+                    ✏️ ערוך פרטים
+                </button>
+                <a href="https://wa.me/${clientData.phone && clientData.phone.startsWith('0') ? '972' + clientData.phone.substring(1) : clientData.phone}" target="_blank" class="action-btn whatsapp">
+                    💬 וואצאפ
+                </a>
             </div>
-                 </div>
-     `;
- }
+        </div>
+    `;
+}
 
 // ===== פונקציות פופאפ מנטוריות =====
 

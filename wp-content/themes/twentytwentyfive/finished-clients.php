@@ -352,14 +352,14 @@ wp_enqueue_script('finished-clients-script', get_template_directory_uri() . '/as
                         <div class="client-header">
                             <div class="client-main-info">
                                 <div class="client-name-main"><?php echo $first_name . ' ' . $last_name; ?></div>
+                                <a href="tel:<?php echo $phone; ?>" class="client-phone-main">
+                                    📞 <?php echo $phone; ?>
+                                </a>
                                 <?php if ($is_contact_lead): ?>
                                     <span class="badge-lead">📞 פוטנציאלית</span>
                                 <?php else: ?>
                                     <span class="badge-finished">💪 סיימה</span>
                                 <?php endif; ?>
-                                <a href="tel:<?php echo $phone; ?>" class="client-phone-main">
-                                    📞 <?php echo $phone; ?>
-                                </a>
                                 <div class="contact-status <?php echo $contact_status; ?>">
                                     <?php echo $contact_status_text; ?>
                                 </div>

@@ -659,7 +659,7 @@ get_header(); ?>
                     <?php endif; ?>
                     
                     <div class="client-actions">
-                        <button type="button" onclick="openViewClientModal(<?php echo $client_id; ?>)" class="btn-glow view" title="צפה בפרטים מלאים">👁️</button>
+                        <button type="button" onclick="openViewClientModal(<?php echo $client_id; ?>)" class="btn-glow view" title="צפה בהערות">👁️</button>
                         <button type="button" onclick="openEditClientModal(<?php echo $client_id; ?>)" class="btn-glow edit" title="ערוך מתאמנת">✏️</button>
                         <?php 
                         // המרת מספר טלפון ישראלי לפורמט בינלאומי עבור וואצאפ
