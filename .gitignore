@@ -75,3 +75,10 @@ vendor/
 
 # htaccess backup
 .htaccess.bak
+
+# LocalWP specific files
+app/sql/local.sql
+.htpasswd
+
+# WordPress specific
+wp-config-sample.php
