@@ -181,7 +181,7 @@
 <header class="crm-header">
     <div class="crm-header-content">
         <a href="<?php echo home_url(); ?>" class="crm-logo">
-            🌟 CRM תזונה - מרים קרישבסקיי
+            🌟 CRM תזונה - מרים קרישבסקי
         </a>
         
         <nav class="crm-nav">
