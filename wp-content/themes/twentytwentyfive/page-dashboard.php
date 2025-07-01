@@ -99,13 +99,13 @@ get_header(); ?>
     }
     
     .section-title {
-        font-size: 1.5rem;
+        font-size: 1.2rem;
         font-weight: 600;
         color: #d7dedc;
-        margin-bottom: 20px;
+        margin-bottom: 12px;
         display: flex;
         align-items: center;
-        gap: 10px;
+        gap: 8px;
         text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
     }
     
@@ -146,108 +146,15 @@ get_header(); ?>
         opacity: 0.8;
     }
     
-    .referral-chart {
-        background: rgba(255, 255, 255, 0.45);
-        backdrop-filter: blur(5.9px);
-        -webkit-backdrop-filter: blur(5.9px);
-        border: 1px solid rgba(255, 255, 255, 0.91);
-        padding: 30px;
-        border-radius: 16px;
-        box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
-        margin-bottom: 40px;
-    }
-    
-    .chart-item {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 15px 0;
-        border-bottom: 1px solid #f3f4f6;
-    }
-    
-    .chart-item:last-child {
-        border-bottom: none;
-    }
-    
-    .chart-bar {
-        background: #3b82f6;
-        height: 8px;
-        border-radius: 4px;
-        margin: 8px 0;
-        transition: width 0.5s ease;
-    }
-    
-    .quick-actions {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-        gap: 20px;
-        margin-top: 30px;
-    }
-    
-    .action-button {
-        display: block;
-        padding: 20px;
-        background: #3b82f6;
-        color: white;
-        text-decoration: none;
-        border-radius: 12px;
-        text-align: center;
-        font-weight: 600;
-        font-size: 1rem;
-        transition: all 0.3s;
-        box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
-    }
-    
-    .action-button:hover {
-        background: #2563eb;
-        transform: translateY(-2px);
-        box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
-        color: white;
-    }
-    
-    .action-button.secondary {
-        background: #f3f4f6;
-        color: #374151;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-    }
-    
-    .action-button.secondary:hover {
-        background: #e5e7eb;
-        color: #374151;
-    }
-    
-    @media (max-width: 768px) {
-        .dashboard-sections {
-            grid-template-columns: 1fr;
-        }
-        .stats-overview {
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-        }
-        .chart-responsive-container {
-            grid-template-columns: 1fr !important;
-            gap: 20px !important;
-        }
-        .chart-canvas-container {
-            display: flex;
-            justify-content: center;
-        }
-        .chart-canvas-container canvas {
-            max-width: 250px;
-            height: auto;
-        }
-    }
-    
     /* סטיילים לגרף עוגה רספונסיבי */
     .chart-responsive-container {
         display: grid;
         grid-template-columns: 1fr 1fr;
-        gap: 30px;
         align-items: center;
     }
     
     .chart-canvas-container {
         position: relative;
-        height: 300px;
         display: flex;
         justify-content: center;
         align-items: center;
@@ -256,14 +163,14 @@ get_header(); ?>
     .chart-legend {
         display: flex;
         flex-direction: column;
-        gap: 15px;
+        gap: 5px;
     }
     
     .legend-item {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        padding: 10px 0;
+        padding: 4px 0;
         border-bottom: 1px solid #f3f4f6;
     }
     
@@ -274,12 +181,12 @@ get_header(); ?>
     .legend-info {
         display: flex;
         align-items: center;
-        gap: 10px;
+        gap: 8px;
     }
     
     .legend-color {
-        width: 20px;
-        height: 20px;
+        width: 16px;
+        height: 16px;
         border-radius: 50%;
         flex-shrink: 0;
     }
@@ -288,17 +195,17 @@ get_header(); ?>
         text-align: left;
         display: flex;
         flex-direction: column;
-        gap: 2px;
+        gap: 1px;
     }
     
     .legend-count {
         font-weight: 600;
-        font-size: 0.95rem;
+        font-size: 0.75rem;
         color: #d7dedc;
     }
     
     .legend-percentage {
-        font-size: 0.875rem;
+        font-size: 0.65rem;
         color: #d7dedc;
         opacity: 0.8;
     }
@@ -312,135 +219,114 @@ get_header(); ?>
     }
     
     .banner-half {
-        background: rgba(255, 255, 255, 0.45);
+        background: rgba(85, 85, 85, 0.70);
         backdrop-filter: blur(5.9px);
         -webkit-backdrop-filter: blur(5.9px);
         border: 1px solid rgba(255, 255, 255, 0.91);
-        padding: 30px;
+        padding: 20px;
         border-radius: 16px;
         box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+        height: fit-content;
     }
     
     .banner-half .chart-responsive-container {
-        grid-template-columns: 1fr;
-        gap: 20px;
+        grid-template-columns: 1fr 1fr;
+        gap: 15px;
+        align-items: center;
     }
     
     .banner-half .chart-canvas-container {
-        height: 200px;
-    }
-    
-    /* סגנונות לבאנר מתאמנות שסיימו */
-    .finished-clients-banner {
-        border-right: 5px solid #6366f1;
-    }
-    
-    .finished-summary {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 20px;
-        margin-bottom: 25px;
-    }
-    
-    .summary-stat {
-        text-align: center;
-        padding: 20px;
-        background: #f8fafc;
-        border-radius: 12px;
-        transition: transform 0.3s;
-    }
-    
-    .summary-stat:hover {
-        transform: translateY(-2px);
-    }
-    
-    .summary-stat.alert {
-        background: #fef3c7;
-        border: 1px solid #f59e0b;
-    }
-    
-    .summary-stat .stat-icon {
-        font-size: 2rem;
-        margin-bottom: 10px;
-    }
-    
-    .summary-stat .stat-number {
-        font-size: 2rem;
-        font-weight: 700;
-        color: #d7dedc;
-        margin-bottom: 5px;
-    }
-    
-    .summary-stat .stat-label {
-        color: #d7dedc;
-        font-size: 0.9rem;
-        font-weight: 500;
-        opacity: 0.8;
-    }
-    
-    .recent-finished h4 {
-        color: #d7dedc;
-        margin-bottom: 15px;
-        font-size: 1.1rem;
-    }
-    
-    .finished-client-item {
+        height: 150px;
         display: flex;
-        justify-content: space-between;
+        justify-content: center;
         align-items: center;
-        padding: 10px 0;
-        border-bottom: 1px solid #f3f4f6;
     }
     
-    .finished-client-item:last-child {
-        border-bottom: none;
+    /* סגנונות לבאנר פעולות מהירות אנכי */
+    .vertical-quick-actions {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        padding: 6px 0;
     }
     
-    .finished-client-item .client-name {
-        font-weight: 600;
-        color: #d7dedc;
-    }
-    
-    .finished-client-item .finish-date {
-        color: #d7dedc;
-        font-size: 0.85rem;
-        opacity: 0.8;
-    }
-    
-    .banner-action {
-        margin-top: 25px;
-        text-align: center;
-    }
-    
-    .action-button.primary {
-        background: linear-gradient(135deg, #6366f1, #8b5cf6);
-        color: white;
-        padding: 15px 25px;
+    .vertical-action-button {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 16px;
+        border: none;
         border-radius: 10px;
-        text-decoration: none;
+        color: white;
         font-weight: 600;
-        display: inline-block;
-        transition: all 0.3s;
-        box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
+        font-size: 14px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+        text-decoration: none;
     }
     
-    .action-button.primary:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4);
+    .vertical-action-button:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
         color: white;
+    }
+    
+    .vertical-action-button .action-icon {
+        font-size: 16px;
+        flex-shrink: 0;
+    }
+    
+    .vertical-action-button .action-text {
+        flex: 1;
+        text-align: right;
     }
     
     @media (max-width: 768px) {
-        .two-column-banners {
+        .dashboard-sections {
             grid-template-columns: 1fr;
         }
-        
-        .finished-summary {
+        .stats-overview {
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        }
+        .two-column-banners {
             grid-template-columns: 1fr;
         }
         
         .banner-half .chart-responsive-container {
             grid-template-columns: 1fr !important;
+            gap: 8px !important;
+        }
+        
+        .banner-half .chart-canvas-container {
+            height: 110px;
+        }
+        
+        .vertical-action-button {
+            font-size: 12px;
+            padding: 8px 12px;
+            gap: 8px;
+        }
+        
+        .vertical-action-button .action-icon {
+            font-size: 13px;
+        }
+        
+        .vertical-quick-actions {
+            gap: 5px;
+        }
+        
+        .banner-half .section-title {
+            font-size: 1.1rem;
+            margin-bottom: 10px;
+        }
+        
+        .legend-count {
+            font-size: 0.7rem !important;
+        }
+        
+        .legend-percentage {
+            font-size: 0.6rem !important;
         }
     }
 </style>
@@ -1032,7 +918,7 @@ get_header(); ?>
         </div>
     </div>
 
-    <!-- בקטה חדשה: מקורות הגעה ומתאמנות שסיימו -->
+    <!-- מקורות הגעה ופעולות מהירות -->
     <div class="two-column-banners">
         <!-- סטטיסטיקות מקורות הגעה עם גרף עוגה רספונסיבי -->
         <div class="banner-half referral-chart">
@@ -1043,7 +929,7 @@ get_header(); ?>
             <div class="chart-responsive-container">
                 <!-- גרף עוגה -->
                 <div class="chart-canvas-container">
-                    <canvas id="pieChart" width="200" height="200"></canvas>
+                    <canvas id="pieChart" width="150" height="150"></canvas>
                 </div>
                 
                 <!-- רשימת מקורות -->
@@ -1054,23 +940,25 @@ get_header(); ?>
                         'status' => 'סטטוס',
                         'whatsapp' => 'וואצאפ',
                         'referral' => 'המלצה',
-                        'mentor' => 'מנטורית'
+                        'mentor' => 'מנטורית',
+                        'unknown' => 'לא ידוע'
                     );
                     
                     $colors = array(
-                        'instagram' => '#E1306C',
-                        'status' => '#25D366',
-                        'whatsapp' => '#25D366',
-                        'referral' => '#3b82f6',
-                        'mentor' => '#8b5cf6'
+                        'instagram' => '#EF4444',
+                        'status' => '#10B981',
+                        'whatsapp' => '#3B82F6',
+                        'referral' => '#8B5CF6',
+                        'mentor' => '#F59E0B',
+                        'unknown' => '#6B7280'
                     );
                     
                     $total_referrals = array_sum($stats['referral_sources']);
                     
                     foreach ($stats['referral_sources'] as $source => $count): 
                         $percentage = $total_referrals > 0 ? round(($count / $total_referrals) * 100) : 0;
-                        $label = isset($source_labels[$source]) ? $source_labels[$source] : $source;
-                        $color = isset($colors[$source]) ? $colors[$source] : '#6b7280';
+                        $label = isset($source_labels[$source]) ? $source_labels[$source] : 'לא ידוע';
+                        $color = isset($colors[$source]) ? $colors[$source] : '#95A5A6';
                     ?>
                         <div class="legend-item">
                             <div class="legend-info">
@@ -1078,7 +966,7 @@ get_header(); ?>
                                 <strong><?php echo $label; ?></strong>
                             </div>
                             <div class="legend-stats">
-                                <div class="legend-count"><?php echo $count; ?> מתאמנות</div>
+                                <div class="legend-count"><?php echo $count; ?> מתאמנת<?php echo $count > 1 ? 'ות' : ''; ?></div>
                                 <div class="legend-percentage"><?php echo $percentage; ?>%</div>
                             </div>
                         </div>
@@ -1087,221 +975,38 @@ get_header(); ?>
             </div>
         </div>
 
-        <!-- באנר מתאמנות שסיימו -->
-        <div class="banner-half finished-clients-banner">
+        <!-- פעולות מהירות -->
+        <div class="banner-half quick-actions-banner">
             <h3 class="section-title">
-                📝 מתאמנות שסיימו
+                🚀 פעולות מהירות
             </h3>
             
-            <div class="finished-stats">
-                <?php 
-                $finished_clients_count = count(get_posts(array(
-                    'post_type' => 'clients',
-                    'posts_per_page' => -1,
-                    'post_status' => 'publish',
-                    'meta_query' => array(
-                        'relation' => 'AND',
-                        array(
-                            'key' => 'end_date',
-                            'value' => date('Y-m-d'),
-                            'compare' => '<',
-                            'type' => 'DATE'
-                        ),
-                        array(
-                            'relation' => 'OR',
-                            array(
-                                'key' => 'is_frozen',
-                                'value' => false,
-                                'compare' => '='
-                            ),
-                            array(
-                                'key' => 'is_frozen',
-                                'value' => 'false',
-                                'compare' => '='
-                            ),
-                            array(
-                                'key' => 'is_frozen',
-                                'value' => '',
-                                'compare' => '='
-                            ),
-                            array(
-                                'key' => 'is_frozen',
-                                'compare' => 'NOT EXISTS'
-                            )
-                        )
-                    )
-                )));
+            <div class="vertical-quick-actions">
+                <button type="button" onclick="openAddClientModal()" class="vertical-action-button" style="background: linear-gradient(135deg, #059669, #047857);">
+                    <span class="action-icon">👥</span>
+                    <span class="action-text">הוסף מתאמנת חדשה</span>
+                </button>
                 
-                $need_follow_up = 0;
-                $recent_finished = get_posts(array(
-                    'post_type' => 'clients',
-                    'posts_per_page' => 3,
-                    'post_status' => 'publish',
-                    'meta_query' => array(
-                        'relation' => 'AND',
-                        array(
-                            'key' => 'end_date',
-                            'value' => date('Y-m-d'),
-                            'compare' => '<',
-                            'type' => 'DATE'
-                        ),
-                        array(
-                            'relation' => 'OR',
-                            array(
-                                'key' => 'is_frozen',
-                                'value' => false,
-                                'compare' => '='
-                            ),
-                            array(
-                                'key' => 'is_frozen',
-                                'value' => 'false',
-                                'compare' => '='
-                            ),
-                            array(
-                                'key' => 'is_frozen',
-                                'value' => '',
-                                'compare' => '='
-                            ),
-                            array(
-                                'key' => 'is_frozen',
-                                'compare' => 'NOT EXISTS'
-                            )
-                        ),
-                        // הוצאת מתאמנות פוטנציאליות - רק מתאמנות שסיימו באמת
-                        array(
-                            'relation' => 'OR',
-                            array(
-                                'key' => 'is_contact_lead',
-                                'value' => false,
-                                'compare' => '='
-                            ),
-                            array(
-                                'key' => 'is_contact_lead',
-                                'value' => 'false',
-                                'compare' => '='
-                            ),
-                            array(
-                                'key' => 'is_contact_lead',
-                                'value' => '',
-                                'compare' => '='
-                            ),
-                            array(
-                                'key' => 'is_contact_lead',
-                                'compare' => 'NOT EXISTS'
-                            )
-                        )
-                    ),
-                    'meta_key' => 'end_date',
-                    'orderby' => 'meta_value',
-                    'order' => 'DESC'
-                ));
+                <button type="button" onclick="openAddMentorModal()" class="vertical-action-button" style="background: linear-gradient(135deg, #0d9488, #0f766e);">
+                    <span class="action-icon">📝</span>
+                    <span class="action-text">הוסף מנטורית חדשה</span>
+                </button>
                 
-                // ספירת מתאמנות שדורשות מעקב
-                foreach (get_posts(array(
-                    'post_type' => 'clients',
-                    'posts_per_page' => -1,
-                    'post_status' => 'publish',
-                    'meta_query' => array(
-                        'relation' => 'AND',
-                        array(
-                            'key' => 'end_date',
-                            'value' => date('Y-m-d'),
-                            'compare' => '<',
-                            'type' => 'DATE'
-                        ),
-                        array(
-                            'relation' => 'OR',
-                            array(
-                                'key' => 'is_frozen',
-                                'value' => false,
-                                'compare' => '='
-                            ),
-                            array(
-                                'key' => 'is_frozen',
-                                'value' => 'false',
-                                'compare' => '='
-                            ),
-                            array(
-                                'key' => 'is_frozen',
-                                'value' => '',
-                                'compare' => '='
-                            ),
-                            array(
-                                'key' => 'is_frozen',
-                                'compare' => 'NOT EXISTS'
-                            )
-                        )
-                    )
-                )) as $finished_client) {
-                    $last_contact = get_field('last_contact_date', $finished_client->ID);
-                    if (!$last_contact || $last_contact < date('Y-m-d', strtotime('-30 days'))) {
-                        $need_follow_up++;
-                    }
-                }
-                ?>
+                <a href="<?php echo admin_url('admin.php?page=add-group-form'); ?>" class="vertical-action-button" style="background: linear-gradient(135deg, #0891b2, #0e7490); text-decoration: none; color: white;">
+                    <span class="action-icon">✨</span>
+                    <span class="action-text">צור קבוצה חדשה</span>
+                </a>
                 
-                <div class="finished-summary">
-                    <div class="summary-stat">
-                        <div class="stat-icon">📊</div>
-                        <div class="stat-number"><?php echo $finished_clients_count; ?></div>
-                        <div class="stat-label">סה"כ סיימו</div>
-                    </div>
-                    
-                    <div class="summary-stat alert">
-                        <div class="stat-icon">📞</div>
-                        <div class="stat-number"><?php echo $need_follow_up; ?></div>
-                        <div class="stat-label">דורשות מעקב</div>
-                    </div>
-                </div>
+                <a href="<?php echo admin_url('admin.php?page=crm-reports'); ?>" class="vertical-action-button" style="background: linear-gradient(135deg, #2563eb, #1d4ed8); text-decoration: none; color: white;">
+                    <span class="action-icon">📊</span>
+                    <span class="action-text">דוחות ואנליטיקס</span>
+                </a>
                 
-                <div class="recent-finished">
-                    <h4>📋 סיימו לאחרונה:</h4>
-                    <?php if ($recent_finished): ?>
-                        <?php foreach ($recent_finished as $client): ?>
-                            <div class="finished-client-item">
-                                <div class="client-name">
-                                    <?php echo get_field('first_name', $client->ID) . ' ' . get_field('last_name', $client->ID); ?>
-                                </div>
-                                <div class="finish-date">
-                                    סיום: <?php echo date('d/m/Y', strtotime(get_field('end_date', $client->ID))); ?>
-                                </div>
-                            </div>
-                        <?php endforeach; ?>
-                    <?php else: ?>
-                        <p>אין מתאמנות שסיימו לאחרונה</p>
-                    <?php endif; ?>
-                </div>
-                
-                <div class="banner-action">
-                    <a href="<?php echo home_url('/finished-clients/'); ?>" class="action-button primary">
-                        👥 צפה בכל המתאמנות שסיימו
-                    </a>
-                </div>
+                <a href="<?php echo admin_url('admin.php?page=payments-management'); ?>" class="vertical-action-button" style="background: linear-gradient(135deg, #4f46e5, #4338ca); text-decoration: none; color: white;">
+                    <span class="action-icon">💰</span>
+                    <span class="action-text">ניהול תשלומים</span>
+                </a>
             </div>
-        </div>
-    </div>
-
-    <!-- פעולות מהירות -->
-    <div class="dashboard-section">
-        <h3 class="section-title">
-            🚀 פעולות מהירות
-        </h3>
-        <div class="quick-actions" style="grid-template-columns: repeat(5, 1fr); gap: 15px;">
-            <button type="button" onclick="openAddClientModal()" class="action-button" style="background: #059669; font-size: 14px; padding: 15px 10px; border: none; cursor: pointer; color: white; text-decoration: none; border-radius: 8px; font-weight: bold;">
-                👥 הוסף מתאמנת חדשה
-            </button>
-            <button type="button" onclick="openAddMentorModal()" class="action-button" style="background: #0d9488; font-size: 14px; padding: 15px 10px; border: none; cursor: pointer; color: white; text-decoration: none; border-radius: 8px; font-weight: 600; transition: all 0.3s;">
-                📝 הוסף מנטורית חדשה
-            </button>
-            <a href="<?php echo admin_url('admin.php?page=add-group-form'); ?>" class="action-button" style="background: #0891b2; font-size: 14px; padding: 15px 10px;">
-                ✨ צור קבוצה חדשה
-            </a>
-            <a href="<?php echo admin_url('admin.php?page=crm-reports'); ?>" class="action-button" style="background: #2563eb; font-size: 14px; padding: 15px 10px;">
-                📊 דוחות ואנליטיקס
-            </a>
-            <a href="<?php echo admin_url('admin.php?page=payments-management'); ?>" class="action-button" style="background: #4f46e5; font-size: 14px; padding: 15px 10px;">
-                💰 ניהול תשלומים
-            </a>
         </div>
     </div>
 
@@ -1466,7 +1171,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     const centerX = canvas.width / 2;
     const centerY = canvas.height / 2;
-    const radius = Math.min(centerX, centerY) - 15; // קטן יותר לגודל החדש
+    const radius = Math.min(centerX, centerY) - 10; // קטן יותר לגודל החדש
     
     // ציור הגרף
     data.forEach(item => {
@@ -1498,11 +1203,11 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // הוספת טקסט במרכז - קטן יותר
     ctx.fillStyle = '#1f2937';
-    ctx.font = 'bold 12px Arial';
+    ctx.font = 'bold 10px Arial';
     ctx.textAlign = 'center';
-    ctx.fillText('סה"כ', centerX, centerY - 6);
-    ctx.font = 'bold 16px Arial';
-    ctx.fillText(total, centerX, centerY + 8);
+    ctx.fillText('סה"כ', centerX, centerY - 4);
+    ctx.font = 'bold 14px Arial';
+    ctx.fillText(total, centerX, centerY + 6);
 });
 </script>
 
