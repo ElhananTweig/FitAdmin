@@ -81,11 +81,11 @@ define( 'WP_MAX_MEMORY_LIMIT', '512M' );
 
 /**
  * For developers: WordPress debugging mode.
- * Set to true temporarily to debug issues
+ * Set to false in production
  */
-define( 'WP_DEBUG', true );
-define( 'WP_DEBUG_LOG', true );
-define( 'WP_DEBUG_DISPLAY', true );
+define( 'WP_DEBUG', false );
+define( 'WP_DEBUG_LOG', false );
+define( 'WP_DEBUG_DISPLAY', false );
 
 define( 'WP_ENVIRONMENT_TYPE', 'production' );
 

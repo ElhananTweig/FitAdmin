@@ -317,7 +317,7 @@ function auto_activate_acf() {
         }
     }
 }
-// add_action('admin_init', 'auto_activate_acf'); // מושבת זמנית בגלל בעיות הפעלה
+add_action('admin_init', 'auto_activate_acf');
 
 // Adds theme support for post formats.
 if ( ! function_exists( 'twentytwentyfive_post_format_setup' ) ) :
