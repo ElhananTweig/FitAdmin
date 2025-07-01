@@ -192,6 +192,27 @@
     border-color: #dc2626;
 }
 
+/* סטיילינג לאופציות ברשימות נפתחות */
+.form-group select option {
+    background: rgba(38, 59, 52, 0.95);
+    color: #d7dedc;
+    padding: 10px;
+    border: none;
+    font-size: 1rem;
+}
+
+.form-group select option:hover,
+.form-group select option:focus {
+    background: rgba(103, 126, 234, 0.8);
+    color: white;
+}
+
+.form-group select option:checked {
+    background: rgba(103, 126, 234, 0.9);
+    color: white;
+    font-weight: 600;
+}
+
 .form-group textarea {
     resize: vertical;
     min-height: 100px;
@@ -597,5 +618,42 @@ button.action-btn.primary:hover {
     .quick-actions-notes .action-btn {
         width: 100%;
         min-width: unset;
+    }
+}
+
+/* תמיכה מורחבת בדפדפנים שונים לשדות בחירה */
+.form-group select optgroup {
+    background: rgba(38, 59, 52, 0.95);
+    color: #d7dedc;
+    font-weight: 600;
+}
+
+.form-group select::-webkit-scrollbar {
+    width: 8px;
+}
+
+.form-group select::-webkit-scrollbar-track {
+    background: rgba(38, 59, 52, 0.7);
+}
+
+.form-group select::-webkit-scrollbar-thumb {
+    background: rgba(103, 126, 234, 0.6);
+    border-radius: 4px;
+}
+
+.form-group select::-webkit-scrollbar-thumb:hover {
+    background: rgba(103, 126, 234, 0.8);
+}
+
+/* Firefox specific styling */
+@-moz-document url-prefix() {
+    .form-group select option {
+        background: rgba(38, 59, 52, 0.95) !important;
+        color: #d7dedc !important;
+    }
+    
+    .form-group select option:hover {
+        background: rgba(103, 126, 234, 0.8) !important;
+        color: white !important;
     }
 } 
