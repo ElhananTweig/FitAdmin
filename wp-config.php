@@ -19,18 +19,32 @@
  * @package WordPress
  */
 
-// ** Database settings - Get these from your Hostinger control panel ** //
-/** The name of the database for WordPress */
-define( 'DB_NAME', 'u993113260_miriam' );
-
-/** Database username */
-define( 'DB_USER', 'u993113260_elhanan' );
-
-/** Database password */
-define( 'DB_PASSWORD', 'Nani5276@' );
-
-/** Database hostname */
-define( 'DB_HOST', 'localhost' );
+// זיהוי סביבה אוטומטי - מקומי או הוסטינגר
+if (file_exists(dirname(__FILE__) . '/local-xdebuginfo.php') || strpos($_SERVER['HTTP_HOST'], '.local') !== false) {
+    // הגדרות למערכת מקומית (LocalWP)
+    define( 'DB_NAME', 'local' );
+    define( 'DB_USER', 'root' );
+    define( 'DB_PASSWORD', 'root' );
+    define( 'DB_HOST', 'localhost' );
+    define( 'WP_ENVIRONMENT_TYPE', 'local' );
+    define( 'WP_DEBUG', true );
+} else {
+    // הגדרות לשרת החי (הוסטינגר)
+    define( 'DB_NAME', 'u993113260_miriam' );
+    define( 'DB_USER', 'u993113260_elhanan' );
+    define( 'DB_PASSWORD', 'Nani5276@' );
+    define( 'DB_HOST', 'localhost' );
+    define( 'WP_ENVIRONMENT_TYPE', 'production' );
+    define( 'WP_DEBUG', false );
+    
+    // הגדרות פרודקשן
+    define( 'WP_HOME', 'https://miriamkryshevski.com/' );
+    define( 'WP_SITEURL', 'https://miriamkryshevski.com/' );
+    define( 'DISALLOW_FILE_EDIT', true );
+    define( 'WP_POST_REVISIONS', 3 );
+    define( 'WP_MEMORY_LIMIT', '256M' );
+    define( 'WP_MAX_MEMORY_LIMIT', '512M' );
+}
 
 /** Database charset to use in creating database tables. */
 define( 'DB_CHARSET', 'utf8' );
@@ -60,34 +74,14 @@ define('NONCE_SALT',       'V$7}^ IYgt,{wA>sr^f1:S*T?<(gJw^zd;t.GG8Y~(41Pp:0,O9G
  */
 $table_prefix = 'wp_';
 
-/**
- * WordPress site URLs - Update these to your domain
- */
-define( 'WP_HOME', 'https://miriamkryshevski.com/' );
-define( 'WP_SITEURL', 'https://miriamkryshevski.com/' );
-
-/**
- * Security settings
- */
-define( 'DISALLOW_FILE_EDIT', true );
-define( 'WP_POST_REVISIONS', 3 );
-define( 'AUTOMATIC_UPDATER_DISABLED', false );
-
-/**
- * Performance optimizations
- */
-define( 'WP_MEMORY_LIMIT', '256M' );
-define( 'WP_MAX_MEMORY_LIMIT', '512M' );
+/* Add any custom values between this line and the "stop editing" line. */
 
 /**
  * For developers: WordPress debugging mode.
  * Set to false in production
  */
-define( 'WP_DEBUG', false );
 define( 'WP_DEBUG_LOG', false );
 define( 'WP_DEBUG_DISPLAY', false );
-
-define( 'WP_ENVIRONMENT_TYPE', 'production' );
 
 /* That's all, stop editing! Happy publishing. */
 
