@@ -340,10 +340,15 @@ class ClientModal {
             this.toggleInstallments();
         } else {
             paymentDetails.style.display = 'none';
-            // הסתרת שדה מספר תשלומים
+            // הסתרת שדה מספר תשלומים וביטול חובה
             const installmentsSection = document.getElementById('installments-section');
+            const installmentsInput = document.getElementById('installments');
             if (installmentsSection) {
                 installmentsSection.style.display = 'none';
+            }
+            if (installmentsInput) {
+                installmentsInput.required = false;
+                installmentsInput.value = '';
             }
         }
     }
