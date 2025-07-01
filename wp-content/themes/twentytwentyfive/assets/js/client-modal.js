@@ -57,6 +57,12 @@ class ClientModal {
             amountPaid.addEventListener('input', () => this.togglePaymentDetails());
         }
 
+        // הצגת שדה מספר תשלומים עבור אשראי
+        const paymentMethod = document.getElementById('payment_method');
+        if (paymentMethod) {
+            paymentMethod.addEventListener('change', () => this.toggleInstallments());
+        }
+
         // העתקת משקל התחלתי למשקל נוכחי
         const startWeight = document.getElementById('start_weight');
         if (startWeight) {
@@ -135,6 +141,12 @@ class ClientModal {
         document.getElementById('personal-mentor').style.display = 'block';
         document.getElementById('group-selection').style.display = 'none';
         document.getElementById('group_id').required = false;
+        
+        // הסתרת שדה מספר תשלומים
+        const installmentsSection = document.getElementById('installments-section');
+        if (installmentsSection) {
+            installmentsSection.style.display = 'none';
+        }
 
         // הסרת הודעות
         this.removeAllAlerts();
@@ -193,6 +205,11 @@ class ClientModal {
 
         if (parseFloat(clientData.amount_paid || 0) > 0) {
             this.togglePaymentDetails();
+        }
+
+        // הפעלת לוגיקת מספר תשלומים אם נטענו נתוני תשלום
+        if (clientData.payment_method) {
+            this.toggleInstallments();
         }
     }
 
@@ -315,8 +332,33 @@ class ClientModal {
             if (!paymentDate.value) {
                 paymentDate.value = new Date().toISOString().split('T')[0];
             }
+            // בדיקה אם צריך להציג שדה מספר תשלומים
+            this.toggleInstallments();
         } else {
             paymentDetails.style.display = 'none';
+            // הסתרת שדה מספר תשלומים
+            const installmentsSection = document.getElementById('installments-section');
+            if (installmentsSection) {
+                installmentsSection.style.display = 'none';
+            }
+        }
+    }
+
+    toggleInstallments() {
+        const paymentMethod = document.getElementById('payment_method');
+        const installmentsSection = document.getElementById('installments-section');
+        
+        if (paymentMethod && installmentsSection) {
+            if (paymentMethod.value === 'credit') {
+                installmentsSection.style.display = 'block';
+            } else {
+                installmentsSection.style.display = 'none';
+                // איפוס הערך כשמסתירים
+                const installmentsSelect = document.getElementById('installments');
+                if (installmentsSelect) {
+                    installmentsSelect.value = '';
+                }
+            }
         }
     }
 

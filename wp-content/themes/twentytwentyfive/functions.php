@@ -1338,6 +1338,7 @@ function get_client_data_ajax() {
         'amount_paid' => get_field('amount_paid', $client_id),
         'payment_method' => get_field('payment_method', $client_id),
         'payment_date' => get_field('payment_date', $client_id),
+        'installments' => get_field('installments', $client_id),
         'start_weight' => get_field('start_weight', $client_id),
         'current_weight' => get_field('current_weight', $client_id),
         'target_weight' => get_field('target_weight', $client_id),
@@ -1383,6 +1384,7 @@ function add_client_ajax() {
     $amount_paid = floatval($_POST['amount_paid']);
     $payment_method = sanitize_text_field($_POST['payment_method']);
     $payment_date = sanitize_text_field($_POST['payment_date']);
+    $installments = intval($_POST['installments']);
     $start_weight = floatval($_POST['start_weight']);
     $current_weight = floatval($_POST['current_weight']);
     $target_weight = floatval($_POST['target_weight']);
@@ -1419,6 +1421,7 @@ function add_client_ajax() {
         update_field('amount_paid', $amount_paid, $post_id);
         if ($payment_method) update_field('payment_method', $payment_method, $post_id);
         if ($payment_date) update_field('payment_date', $payment_date, $post_id);
+        if ($installments) update_field('installments', $installments, $post_id);
         update_field('start_weight', $start_weight, $post_id);
         if ($current_weight) update_field('current_weight', $current_weight, $post_id);
         update_field('target_weight', $target_weight, $post_id);
@@ -1461,6 +1464,7 @@ function edit_client_ajax() {
     $amount_paid = floatval($_POST['amount_paid']);
     $payment_method = sanitize_text_field($_POST['payment_method']);
     $payment_date = sanitize_text_field($_POST['payment_date']);
+    $installments = intval($_POST['installments']);
     $start_weight = floatval($_POST['start_weight']);
     $current_weight = floatval($_POST['current_weight']);
     $target_weight = floatval($_POST['target_weight']);
@@ -1496,15 +1500,11 @@ function edit_client_ajax() {
         update_field('amount_paid', $amount_paid, $client_id);
         if ($payment_method) update_field('payment_method', $payment_method, $client_id);
         if ($payment_date) update_field('payment_date', $payment_date, $client_id);
+        if ($installments) update_field('installments', $installments, $client_id);
         update_field('start_weight', $start_weight, $client_id);
         if ($current_weight) update_field('current_weight', $current_weight, $client_id);
         update_field('target_weight', $target_weight, $client_id);
         update_field('training_type', $training_type, $client_id);
-        
-        // ניקוי שדות מנטורית/קבוצה
-        update_field('mentor', null, $client_id);
-        update_field('group_id', null, $client_id);
-        
         if ($training_type === 'personal' && $mentor_id) {
             update_field('mentor', $mentor_id, $client_id);
         } elseif ($training_type === 'group' && $group_id) {
@@ -1553,6 +1553,7 @@ function handle_add_client_form() {
     $amount_paid = floatval($_POST['amount_paid']);
     $payment_method = sanitize_text_field($_POST['payment_method']);
     $payment_date = sanitize_text_field($_POST['payment_date']);
+    $installments = intval($_POST['installments']);
     $start_weight = floatval($_POST['start_weight']);
     $current_weight = floatval($_POST['current_weight']);
     $target_weight = floatval($_POST['target_weight']);
@@ -1583,6 +1584,7 @@ function handle_add_client_form() {
         update_field('amount_paid', $amount_paid, $post_id);
         if ($payment_method) update_field('payment_method', $payment_method, $post_id);
         if ($payment_date) update_field('payment_date', $payment_date, $post_id);
+        if ($installments) update_field('installments', $installments, $post_id);
         update_field('start_weight', $start_weight, $post_id);
         if ($current_weight) update_field('current_weight', $current_weight, $post_id);
         update_field('target_weight', $target_weight, $post_id);
@@ -1677,6 +1679,7 @@ function handle_edit_client_form() {
     $amount_paid = floatval($_POST['amount_paid']);
     $payment_method = sanitize_text_field($_POST['payment_method']);
     $payment_date = sanitize_text_field($_POST['payment_date']);
+    $installments = intval($_POST['installments']);
     $start_weight = floatval($_POST['start_weight']);
     $current_weight = floatval($_POST['current_weight']);
     $target_weight = floatval($_POST['target_weight']);
@@ -1706,6 +1709,7 @@ function handle_edit_client_form() {
         update_field('amount_paid', $amount_paid, $client_id);
         if ($payment_method) update_field('payment_method', $payment_method, $client_id);
         if ($payment_date) update_field('payment_date', $payment_date, $client_id);
+        if ($installments) update_field('installments', $installments, $client_id);
         update_field('start_weight', $start_weight, $client_id);
         if ($current_weight) update_field('current_weight', $current_weight, $client_id);
         update_field('target_weight', $target_weight, $client_id);
