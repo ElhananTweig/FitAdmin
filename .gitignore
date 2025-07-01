@@ -84,3 +84,15 @@ app/sql/local.sql
 
 # WordPress specific
 wp-config-sample.php
+
+# Plugin directories - allow ACF vendor but not other plugin vendors
+/wp-content/plugins/*/vendor/
+!/wp-content/plugins/advanced-custom-fields/vendor/
+
+# Theme uploads and cache
+/wp-content/themes/*/node_modules/
+/wp-content/themes/*/assets/build/
+
+# ACF JSON files should be included for synchronization (not ignored)
+!/wp-content/themes/*/acf-json/
+!/wp-content/themes/*/acf-json/*.json
