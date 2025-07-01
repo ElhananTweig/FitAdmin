@@ -637,8 +637,8 @@ add_action('init', 'create_client_taxonomies');
 
 // הוספת שדות מותאמים (ACF)
 function add_client_custom_fields() {
-    if (function_exists('acf_add_local_field_group')) {
-        acf_add_local_field_group(array(
+    if (function_exists('acf_add_field_group')) {
+        acf_add_field_group(array(
             'key' => 'group_clients',
             'title' => 'פרטי מתאמנת',
             'fields' => array(
@@ -929,7 +929,7 @@ function add_client_custom_fields() {
         ));
         
         // שדות למנטוריות
-        acf_add_local_field_group(array(
+        acf_add_field_group(array(
             'key' => 'group_mentors',
             'title' => 'פרטי מנטורית',
             'fields' => array(
@@ -2323,62 +2323,6 @@ function delete_group_ajax() {
 
 add_action('wp_ajax_delete_group', 'delete_group_ajax');
 add_action('wp_ajax_nopriv_delete_group', 'delete_group_ajax');
-
-/**
- * ACF JSON Sync - הפעלת סנכרון שדות ACF באמצעות קבצי JSON
- * זה יאפשר לשמור שדות ACF בקבצי JSON במקום רק במסד הנתונים
- * ויסנכרן אותם בין הסביבה המקומית לפרודקשן
- */
-
-// הגדרת תיקיית save point לשמירת קבצי JSON
-add_filter('acf/settings/save_json', 'my_acf_json_save_point');
-function my_acf_json_save_point( $path ) {
-    // החזרת הנתיב לתיקיית acf-json בתמה
-    $path = get_stylesheet_directory() . '/acf-json';
-    return $path;
-}
-
-// הגדרת תיקיית load point לטעינת קבצי JSON
-add_filter('acf/settings/load_json', 'my_acf_json_load_point');
-function my_acf_json_load_point( $paths ) {
-    // הסרת הנתיב הברירת מחדל
-    unset($paths[0]);
-    
-    // הוספת הנתיב לתיקיית acf-json בתמה
-    $paths[] = get_stylesheet_directory() . '/acf-json';
-    
-    return $paths;
-}
-
-// פונקציה לוודא שתיקיית acf-json קיימת
-function ensure_acf_json_directory() {
-    $json_dir = get_stylesheet_directory() . '/acf-json';
-    if (!file_exists($json_dir)) {
-        wp_mkdir_p($json_dir);
-    }
-}
-
-// הפעלת הפונקציה בעת טעינת התמה
-add_action('after_setup_theme', 'ensure_acf_json_directory');
-
-/**
- * הוספת הודעת מנהל עבור Sync של שדות ACF
- */
-add_action('admin_notices', 'acf_json_sync_notice');
-function acf_json_sync_notice() {
-    if (!current_user_can('manage_options')) {
-        return;
-    }
-    
-    // בדיקה אם יש שדות שצריכים sync
-    $local_json_files = glob(get_stylesheet_directory() . '/acf-json/*.json');
-    if ($local_json_files && is_admin()) {
-        echo '<div class="notice notice-info is-dismissible">';
-        echo '<p><strong>ACF JSON Sync:</strong> שדות ACF יישמרו כעת כקבצי JSON ויסונכרנו בין הסביבות. ';
-        echo 'כשתעדכן שדה, לך ל-<a href="' . admin_url('edit.php?post_type=acf-field-group') . '">Custom Fields > Field Groups</a> ובדוק אם יש שדות שצריכים Sync.</p>';
-        echo '</div>';
-    }
-}
 
 
 
