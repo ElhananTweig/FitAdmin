@@ -196,13 +196,8 @@ $payment_methods = array(
                         <!-- שדה מספר תשלומים - מוצג רק עבור אשראי -->
                         <div id="installments-section" class="form-row" style="display: none;">
                             <div class="form-group">
-                                <label for="installments">מספר תשלומים</label>
-                                <select id="installments" name="installments">
-                                    <option value="">בחר מספר תשלומים...</option>
-                                    <?php for ($i = 1; $i <= 10; $i++): ?>
-                                        <option value="<?php echo $i; ?>"><?php echo $i; ?> תשלומים</option>
-                                    <?php endfor; ?>
-                                </select>
+                                <label for="installments">מספר תשלומים <span class="required">*</span></label>
+                                <input type="number" id="installments" name="installments" min="1" max="99" placeholder="הזן מספר תשלומים">
                             </div>
                         </div>
                     </div>

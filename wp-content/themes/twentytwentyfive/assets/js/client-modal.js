@@ -142,10 +142,14 @@ class ClientModal {
         document.getElementById('group-selection').style.display = 'none';
         document.getElementById('group_id').required = false;
         
-        // הסתרת שדה מספר תשלומים
+        // הסתרת שדה מספר תשלומים וביטול חובה
         const installmentsSection = document.getElementById('installments-section');
+        const installmentsInput = document.getElementById('installments');
         if (installmentsSection) {
             installmentsSection.style.display = 'none';
+        }
+        if (installmentsInput) {
+            installmentsInput.required = false;
         }
 
         // הסרת הודעות
@@ -347,17 +351,17 @@ class ClientModal {
     toggleInstallments() {
         const paymentMethod = document.getElementById('payment_method');
         const installmentsSection = document.getElementById('installments-section');
+        const installmentsInput = document.getElementById('installments');
         
-        if (paymentMethod && installmentsSection) {
+        if (paymentMethod && installmentsSection && installmentsInput) {
             if (paymentMethod.value === 'credit') {
                 installmentsSection.style.display = 'block';
+                installmentsInput.required = true;
             } else {
                 installmentsSection.style.display = 'none';
+                installmentsInput.required = false;
                 // איפוס הערך כשמסתירים
-                const installmentsSelect = document.getElementById('installments');
-                if (installmentsSelect) {
-                    installmentsSelect.value = '';
-                }
+                installmentsInput.value = '';
             }
         }
     }
