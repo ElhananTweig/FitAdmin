@@ -637,8 +637,8 @@ add_action('init', 'create_client_taxonomies');
 
 // הוספת שדות מותאמים (ACF)
 function add_client_custom_fields() {
-    if (function_exists('acf_add_field_group')) {
-        acf_add_field_group(array(
+    if (function_exists('acf_add_local_field_group')) {
+        acf_add_local_field_group(array(
             'key' => 'group_clients',
             'title' => 'פרטי מתאמנת',
             'fields' => array(
@@ -929,7 +929,7 @@ function add_client_custom_fields() {
         ));
         
         // שדות למנטוריות
-        acf_add_field_group(array(
+        acf_add_local_field_group(array(
             'key' => 'group_mentors',
             'title' => 'פרטי מנטורית',
             'fields' => array(
