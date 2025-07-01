@@ -302,18 +302,22 @@ function auto_activate_acf() {
     
     // בדיקה אם התוסף קיים אבל לא פעיל
     if (file_exists(WP_PLUGIN_DIR . '/' . $plugin_path) && !is_plugin_active($plugin_path)) {
-        activate_plugin($plugin_path);
+        // הפעלה בטוחה של התוסף
+        $result = activate_plugin($plugin_path, '', false, true);
         
-        // הוספת הודעה לאדמין
-        add_action('admin_notices', function() {
-            echo '<div class="notice notice-success is-dismissible" style="direction: rtl;">
-                <p><strong>✅ תוסף Advanced Custom Fields הופעל אוטומטית!</strong></p>
-                <p>כעת מערכת ה-CRM מוכנה לשימוש. תוכל ליצור נתוני דמו.</p>
-            </div>';
-        });
+        // בדיקה אם ההפעלה הצליחה
+        if (!is_wp_error($result)) {
+            // הוספת הודעה לאדמין
+            add_action('admin_notices', function() {
+                echo '<div class="notice notice-success is-dismissible" style="direction: rtl;">
+                    <p><strong>✅ תוסף Advanced Custom Fields הופעל אוטומטית!</strong></p>
+                    <p>כעת מערכת ה-CRM מוכנה לשימוש. תוכל ליצור נתוני דמו.</p>
+                </div>';
+            });
+        }
     }
 }
-add_action('admin_init', 'auto_activate_acf');
+// add_action('admin_init', 'auto_activate_acf'); // מושבת זמנית בגלל בעיות הפעלה
 
 // Adds theme support for post formats.
 if ( ! function_exists( 'twentytwentyfive_post_format_setup' ) ) :
