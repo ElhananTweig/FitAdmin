@@ -690,7 +690,7 @@ get_header(); ?>
             }
         }
         
-        // מנטוריות חדשות השבוע
+        // מנטוריות חדשות השבוע (ללא מנטוריות שנמחקו)
         $new_mentors = get_posts(array(
             'post_type' => 'mentors',
             'posts_per_page' => -1,
@@ -700,6 +700,28 @@ get_header(); ?>
                     'after' => $week_start,
                     'before' => $today . ' 23:59:59',
                     'inclusive' => true
+                )
+            ),
+            'meta_query' => array(
+                'relation' => 'OR',
+                array(
+                    'key' => 'is_deleted',
+                    'value' => false,
+                    'compare' => '='
+                ),
+                array(
+                    'key' => 'is_deleted',
+                    'value' => 'false',
+                    'compare' => '='
+                ),
+                array(
+                    'key' => 'is_deleted',
+                    'value' => '',
+                    'compare' => '='
+                ),
+                array(
+                    'key' => 'is_deleted',
+                    'compare' => 'NOT EXISTS'
                 )
             )
         ));

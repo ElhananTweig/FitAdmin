@@ -3,11 +3,33 @@
  * פופ-אפ להוספת/עריכת מתאמנת
  */
 
-// קבלת רשימת מנטוריות
+// קבלת רשימת מנטוריות (ללא מנטוריות שנמחקו)
 $mentors = get_posts(array(
     'post_type' => 'mentors',
     'posts_per_page' => -1,
-    'post_status' => 'publish'
+    'post_status' => 'publish',
+    'meta_query' => array(
+        'relation' => 'OR',
+        array(
+            'key' => 'is_deleted',
+            'value' => false,
+            'compare' => '='
+        ),
+        array(
+            'key' => 'is_deleted',
+            'value' => 'false',
+            'compare' => '='
+        ),
+        array(
+            'key' => 'is_deleted',
+            'value' => '',
+            'compare' => '='
+        ),
+        array(
+            'key' => 'is_deleted',
+            'compare' => 'NOT EXISTS'
+        )
+    )
 ));
 
 // קבלת רשימת קבוצות

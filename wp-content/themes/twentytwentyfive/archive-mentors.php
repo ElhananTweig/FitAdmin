@@ -236,8 +236,11 @@ get_header(); ?>
                 $payment_percentage = get_field('payment_percentage');
                 $notes = get_field('mentor_notes');
                 
-                // ספירת מתאמנות למנטורית (ללא פוטנציאליות)
-                $clients_count = get_posts(array(
+                // ספירת מתאמנות פעילות למנטורית (ללא פוטנציאליות)
+                // כולל גם מתאמנות עם ליווי אישי וגם מתאמנות מקבוצות שהמנטורית מנהלת
+                
+                // 1. מתאמנות עם ליווי אישי
+                $personal_clients = get_posts(array(
                     'post_type' => 'clients',
                     'posts_per_page' => -1,
                     'meta_query' => array(
@@ -272,7 +275,110 @@ get_header(); ?>
                         )
                     )
                 ));
-                $clients_count = count($clients_count);
+                
+                // 2. מתאמנות מקבוצות שהמנטורית מנהלת
+                // קודם נמצא את כל הקבוצות של המנטורית
+                $mentor_groups = get_posts(array(
+                    'post_type' => 'groups',
+                    'posts_per_page' => -1,
+                    'meta_query' => array(
+                        array(
+                            'key' => 'group_mentor',
+                            'value' => $mentor_id,
+                            'compare' => '='
+                        )
+                    )
+                ));
+                
+                $group_clients = array();
+                foreach ($mentor_groups as $group) {
+                    // מציאת מתאמנות מהקבוצה הזאת
+                    $potential_clients = get_posts(array(
+                        'post_type' => 'clients',
+                        'posts_per_page' => -1,
+                        'meta_query' => array(
+                            'relation' => 'AND',
+                            array(
+                                'key' => 'training_type',
+                                'value' => 'group',
+                                'compare' => '='
+                            ),
+                            // הוצאת מתאמנות פוטנציאליות
+                            array(
+                                'relation' => 'OR',
+                                array(
+                                    'key' => 'is_contact_lead',
+                                    'value' => false,
+                                    'compare' => '='
+                                ),
+                                array(
+                                    'key' => 'is_contact_lead',
+                                    'value' => 'false',
+                                    'compare' => '='
+                                ),
+                                array(
+                                    'key' => 'is_contact_lead',
+                                    'value' => '',
+                                    'compare' => '='
+                                ),
+                                array(
+                                    'key' => 'is_contact_lead',
+                                    'compare' => 'NOT EXISTS'
+                                )
+                            )
+                        )
+                    ));
+                    
+                    // בדיקה ידנית של group_id כי הוא יכול להיות אובייקט או מספר
+                    foreach ($potential_clients as $client) {
+                        $client_group_id = get_field('group_id', $client->ID);
+                        $client_group_id_num = is_object($client_group_id) ? $client_group_id->ID : $client_group_id;
+                        
+                        if ($client_group_id_num == $group->ID) {
+                            $group_clients[] = $client;
+                        }
+                    }
+                }
+                
+                // איחוד כל המתאמנות והסרת כפילויות
+                $all_mentor_clients = array_merge($personal_clients, $group_clients);
+                
+                // הסרת כפילויות על בסיס ID
+                $unique_clients = array();
+                $seen_ids = array();
+                foreach ($all_mentor_clients as $client) {
+                    if (!in_array($client->ID, $seen_ids)) {
+                        $unique_clients[] = $client;
+                        $seen_ids[] = $client->ID;
+                    }
+                }
+                $all_mentor_clients = $unique_clients;
+                
+                // חישוב מתאמנות פעילות בלבד - בדיוק כמו בעמוד המתאמנות
+                $today = date('Y-m-d');
+                $one_week_later = date('Y-m-d', strtotime('+7 days'));
+                $active_clients_count = 0;
+                
+                foreach ($all_mentor_clients as $client) {
+                    $end_date = get_field('end_date', $client->ID);
+                    $is_frozen = get_field('is_frozen', $client->ID);
+                    
+                    // חישוב סטטוס בדיוק כמו בעמוד המתאמנות
+                    $status = 'active';
+                    
+                    if ($is_frozen) {
+                        $status = 'frozen';
+                    } elseif ($end_date < $today) {
+                        $status = 'ended';
+                    } elseif ($end_date <= $one_week_later) {
+                        $status = 'active ending';
+                    }
+                    
+                    // מתאמנת נחשבת פעילה אם הסטטוס שלה מכיל "active"
+                    if (strpos($status, 'active') !== false) {
+                        $active_clients_count++;
+                    }
+                }
             ?>
                 <div class="mentor-card">
                     <div class="mentor-name">
@@ -296,8 +402,8 @@ get_header(); ?>
                         
                         <div class="mentor-detail">
                             <strong>👥 מתאמנות:</strong>
-                            <a href="<?php echo get_post_type_archive_link('clients') . '?mentor=' . $mentor_id; ?>" style="color: #8b5cf6;">
-                                <?php echo $clients_count; ?> מתאמנות פעילות
+                            <a href="<?php echo get_post_type_archive_link('clients') . '?mentor=' . $mentor_id . '&filter=active'; ?>" style="color: #8b5cf6;">
+                                <?php echo $active_clients_count; ?> מתאמנות פעילות
                             </a>
                         </div>
                     </div>
@@ -316,7 +422,7 @@ get_header(); ?>
                     
                     <div class="mentor-actions">
                         <button type="button" onclick="openEditMentorModal(<?php echo $mentor_id; ?>)" class="btn-glow edit" title="ערוך מנטורית">✏️</button>
-                        <a href="<?php echo get_post_type_archive_link('clients') . '?mentor=' . $mentor_id; ?>" class="btn-glow view" title="צפה במתאמנות של המנטורית">👁️</a>
+                        <a href="<?php echo get_post_type_archive_link('clients') . '?mentor=' . $mentor_id . '&filter=active'; ?>" class="btn-glow view" title="צפה במתאמנות הפעילות של המנטורית">👁️</a>
                         <?php if ($phone): ?>
                             <?php 
                             // המרת מספר טלפון ישראלי לפורמט בינלאומי עבור וואצאפ
@@ -346,7 +452,7 @@ get_header(); ?>
 <script>
 // פונקציה למחיקת מנטורית
 function deleteMentor(mentorId, mentorName) {
-    if (!confirm(`האם אתה בטוח שברצונך למחוק את המנטורית "${mentorName}"?\n\nפעולה זו בלתי הפיכה!`)) {
+    if (!confirm(`האם אתה בטוח שברצונך למחוק את המנטורית "${mentorName}"?\n\n⚠️ המנטורית לא תמחק לגמרי מהמערכת:\n• מתאמנות קיימות שמקושרות אליה ימשיכו להיות מקושרות\n• המנטורית לא תופיע יותר בעמוד המנטוריות\n• לא ניתן יהיה לבחור בה למתאמנות חדשות\n\nהאם להמשיך?`)) {
         return;
     }
     

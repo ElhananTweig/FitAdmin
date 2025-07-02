@@ -461,7 +461,29 @@ get_header(); ?>
                 $mentors = get_posts(array(
                     'post_type' => 'mentors',
                     'posts_per_page' => -1,
-                    'post_status' => 'publish'
+                    'post_status' => 'publish',
+                    'meta_query' => array(
+                        'relation' => 'OR',
+                        array(
+                            'key' => 'is_deleted',
+                            'value' => false,
+                            'compare' => '='
+                        ),
+                        array(
+                            'key' => 'is_deleted',
+                            'value' => 'false',
+                            'compare' => '='
+                        ),
+                        array(
+                            'key' => 'is_deleted',
+                            'value' => '',
+                            'compare' => '='
+                        ),
+                        array(
+                            'key' => 'is_deleted',
+                            'compare' => 'NOT EXISTS'
+                        )
+                    )
                 ));
                 foreach ($mentors as $mentor):
                     $mentor_name = get_field('mentor_first_name', $mentor->ID) . ' ' . get_field('mentor_last_name', $mentor->ID);

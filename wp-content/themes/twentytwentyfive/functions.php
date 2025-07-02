@@ -607,6 +607,48 @@ function modify_clients_query($query) {
 }
 add_action('pre_get_posts', 'modify_clients_query');
 
+// סינון מנטוריות שנמחקו מכל השאילתות (Soft Delete Filter)
+function modify_mentors_query($query) {
+    if (!is_admin() && $query->is_main_query()) {
+        if (is_post_type_archive('mentors')) {
+            $query->set('posts_per_page', -1); // הצגת כל המנטוריות
+            
+            // הוספת meta_query לסינון מנטוריות שנמחקו
+            $existing_meta_query = $query->get('meta_query');
+            if (!is_array($existing_meta_query)) {
+                $existing_meta_query = array();
+            }
+            
+            // הוספת תנאי לא לכלול מנטוריות שנמחקו
+            $existing_meta_query[] = array(
+                'relation' => 'OR',
+                array(
+                    'key' => 'is_deleted',
+                    'value' => false,
+                    'compare' => '='
+                ),
+                array(
+                    'key' => 'is_deleted',
+                    'value' => 'false',
+                    'compare' => '='
+                ),
+                array(
+                    'key' => 'is_deleted',
+                    'value' => '',
+                    'compare' => '='
+                ),
+                array(
+                    'key' => 'is_deleted',
+                    'compare' => 'NOT EXISTS'
+                )
+            );
+            
+            $query->set('meta_query', $existing_meta_query);
+        }
+    }
+}
+add_action('pre_get_posts', 'modify_mentors_query');
+
 // הוספת טקסונומיות
 function create_client_taxonomies() {
     // סטטוס תשלום
@@ -974,6 +1016,30 @@ function add_client_custom_fields() {
                     'label' => 'הערות',
                     'name' => 'mentor_notes',
                     'type' => 'textarea',
+                ),
+                array(
+                    'key' => 'field_is_deleted',
+                    'label' => 'נמחקה',
+                    'name' => 'is_deleted',
+                    'type' => 'true_false',
+                    'default_value' => 0,
+                    'instructions' => 'האם המנטורית נמחקה מהמערכת (מחיקה רכה)',
+                ),
+                array(
+                    'key' => 'field_deleted_date',
+                    'label' => 'תאריך מחיקה',
+                    'name' => 'deleted_date',
+                    'type' => 'date_time_picker',
+                    'instructions' => 'מתי המנטורית נמחקה',
+                    'conditional_logic' => array(
+                        array(
+                            array(
+                                'field' => 'field_is_deleted',
+                                'operator' => '==',
+                                'value' => '1',
+                            ),
+                        ),
+                    ),
                 ),
             ),
             'location' => array(
@@ -2327,6 +2393,223 @@ function delete_group_ajax() {
 
 add_action('wp_ajax_delete_group', 'delete_group_ajax');
 add_action('wp_ajax_nopriv_delete_group', 'delete_group_ajax');
+
+// AJAX handler למחיקה רכה של מנטורית (Soft Delete)
+function delete_mentor_ajax() {
+    // בדיקת nonce לאבטחה
+    if (!wp_verify_nonce($_POST['nonce'], 'delete_mentor_nonce')) {
+        wp_die('אין הרשאה לבצע פעולה זו', 'שגיאת אבטחה', array('response' => 403));
+    }
+    
+    // בדיקה שהמשתמש מחובר ויש לו הרשאות
+    if (!is_user_logged_in() || !current_user_can('manage_options')) {
+        wp_send_json_error('יש להתחבר עם הרשאות מנהל כדי לבצע פעולה זו');
+        return;
+    }
+    
+    // קבלת מזהה המנטורית
+    $mentor_id = intval($_POST['mentor_id']);
+    
+    if (!$mentor_id) {
+        wp_send_json_error('מזהה מנטורית לא תקין');
+        return;
+    }
+    
+    // בדיקה שהפוסט קיים ומסוג mentors
+    $post = get_post($mentor_id);
+    if (!$post || $post->post_type !== 'mentors') {
+        wp_send_json_error('המנטורית לא נמצאה');
+        return;
+    }
+    
+    // שמירת שם המנטורית לפני המחיקה
+    $first_name = get_field('mentor_first_name', $mentor_id);
+    $last_name = get_field('mentor_last_name', $mentor_id);
+    $mentor_name = trim($first_name . ' ' . $last_name);
+    if (empty($mentor_name)) {
+        $mentor_name = $post->post_title;
+    }
+    
+    // ביצוע מחיקה רכה - סימון המנטורית כנמחקה במקום מחיקה ממשית
+    $soft_deleted = update_field('is_deleted', true, $mentor_id);
+    
+    // עדכון תאריך המחיקה לתיעוד
+    update_field('deleted_date', date('Y-m-d H:i:s'), $mentor_id);
+    
+    if ($soft_deleted !== false) {
+        // חיפוש מתאמנות שמקושרות למנטורית זו (הן ימשיכו להיות מקושרות)
+        $linked_clients = get_posts(array(
+            'post_type' => 'clients',
+            'posts_per_page' => -1,
+            'meta_query' => array(
+                array(
+                    'key' => 'mentor',
+                    'value' => $mentor_id,
+                    'compare' => '='
+                )
+            )
+        ));
+        
+        $linked_count = count($linked_clients);
+        
+        // מחיקה רכה מוצלחת
+        wp_send_json_success(array(
+            'message' => "המנטורית {$mentor_name} נמחקה בהצלחה",
+            'mentor_id' => $mentor_id,
+            'mentor_name' => $mentor_name,
+            'linked_clients_count' => $linked_count,
+            'note' => $linked_count > 0 ? "מתאמנות שהיו מקושרות למנטורית זו ימשיכו להיות מקושרות אליה בהיסטוריה" : ""
+        ));
+    } else {
+        // כשל במחיקה רכה
+        wp_send_json_error('אירעה שגיאה במהלך המחיקה');
+    }
+}
+
+add_action('wp_ajax_delete_mentor', 'delete_mentor_ajax');
+add_action('wp_ajax_nopriv_delete_mentor', 'delete_mentor_ajax');
+
+// פונקציה לבדיקה ותיקון שדות ACF למנטוריות (לשימוש חירום)
+function fix_mentor_acf_fields() {
+    // בדיקה אם השדות קיימים
+    $field_group = acf_get_field_group('group_mentors');
+    
+    if (!$field_group) {
+        // אם קבוצת השדות לא קיימת, ניצור אותה מחדש
+        add_client_custom_fields();
+        return "שדות ACF נוצרו מחדש";
+    }
+    
+    // בדיקה אם השדות החדשים קיימים
+    $fields = acf_get_fields($field_group);
+    $has_is_deleted = false;
+    $has_deleted_date = false;
+    
+    foreach ($fields as $field) {
+        if ($field['name'] === 'is_deleted') {
+            $has_is_deleted = true;
+        }
+        if ($field['name'] === 'deleted_date') {
+            $has_deleted_date = true;
+        }
+    }
+    
+    if (!$has_is_deleted || !$has_deleted_date) {
+        // אם השדות החדשים חסרים, ניצור את הקבוצה מחדש
+        add_client_custom_fields();
+        return "שדות מחיקה רכה נוספו לקבוצת השדות";
+    }
+    
+    return "כל השדות קיימים ותקינים";
+}
+
+// פונקציה לבדיקה מהירה של מצב המערכת
+function check_mentor_system_status() {
+    $status = array();
+    
+    // בדיקת שדות ACF
+    $field_group = acf_get_field_group('group_mentors');
+    $status['acf_fields'] = $field_group ? 'תקין' : 'לא קיים';
+    
+    // בדיקת מנטוריות
+    $mentors = get_posts(array('post_type' => 'mentors', 'posts_per_page' => 1));
+    $status['mentors_exist'] = !empty($mentors) ? 'תקין' : 'אין מנטוריות';
+    
+    // בדיקת השדות החדשים
+    if (!empty($mentors)) {
+        $mentor_id = $mentors[0]->ID;
+        $is_deleted = get_field('is_deleted', $mentor_id);
+        $deleted_date = get_field('deleted_date', $mentor_id);
+        $status['soft_delete_fields'] = ($is_deleted !== null) ? 'תקין' : 'שדות לא נוצרו';
+    }
+    
+    return $status;
+}
+
+// הוספת אדמין פנל לבדיקת המערכת (רק למנהלים)
+function add_mentor_debug_menu() {
+    if (current_user_can('manage_options')) {
+        add_management_page(
+            'בדיקת מערכת מנטוריות',
+            'בדיקת מנטוריות',
+            'manage_options',
+            'mentor-debug',
+            'mentor_debug_page'
+        );
+    }
+}
+add_action('admin_menu', 'add_mentor_debug_menu');
+
+function mentor_debug_page() {
+    if (!current_user_can('manage_options')) {
+        wp_die('אין הרשאות');
+    }
+    
+    // טיפול בפעולות
+    $message = '';
+    if (isset($_POST['action'])) {
+        if ($_POST['action'] === 'fix_fields') {
+            $message = fix_mentor_acf_fields();
+        } elseif ($_POST['action'] === 'flush_rules') {
+            flush_rewrite_rules();
+            $message = "כללי URL עודכנו";
+        }
+    }
+    
+    $status = check_mentor_system_status();
+    ?>
+    <div class="wrap" style="direction: rtl;">
+        <h1>🔧 בדיקת מערכת מנטוריות</h1>
+        
+        <?php if ($message): ?>
+            <div class="notice notice-success">
+                <p>✅ <?php echo $message; ?></p>
+            </div>
+        <?php endif; ?>
+        
+        <h2>מצב המערכת:</h2>
+        <table class="widefat">
+            <tr>
+                <td><strong>שדות ACF</strong></td>
+                <td><?php echo $status['acf_fields']; ?></td>
+            </tr>
+            <tr>
+                <td><strong>מנטוריות קיימות</strong></td>
+                <td><?php echo $status['mentors_exist']; ?></td>
+            </tr>
+            <?php if (isset($status['soft_delete_fields'])): ?>
+            <tr>
+                <td><strong>שדות מחיקה רכה</strong></td>
+                <td><?php echo $status['soft_delete_fields']; ?></td>
+            </tr>
+            <?php endif; ?>
+        </table>
+        
+        <h2>פעולות תיקון:</h2>
+        <form method="post" style="margin: 20px 0;">
+            <input type="hidden" name="action" value="fix_fields">
+            <input type="submit" class="button button-primary" value="🔧 תקן שדות ACF">
+            <p class="description">יוצר מחדש את שדות ה-ACF למנטוריות</p>
+        </form>
+        
+        <form method="post" style="margin: 20px 0;">
+            <input type="hidden" name="action" value="flush_rules">
+            <input type="submit" class="button" value="🔄 רענן כללי URL">
+            <p class="description">מרענן את כללי הנתיבים של וורדפרס</p>
+        </form>
+        
+        <div style="background: #f0f0f1; padding: 15px; border-radius: 5px; margin-top: 20px;">
+            <h3>🚨 אם המחיקה לא עובדת:</h3>
+            <ol>
+                <li>לחץ על "תקן שדות ACF"</li>
+                <li>לחץ על "רענן כללי URL"</li>
+                <li>נקה קאש האתר (אם קיים)</li>
+                <li>בדוק שהמשתמש מחובר כמנהל</li>
+            </ol>
+        </div>
+    </div>
+    <?php
+}
 
 
 
