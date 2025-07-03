@@ -700,9 +700,9 @@ get_header(); ?>
         <div class="no-clients">
             <h3>אין מתאמנות עדיין</h3>
             <p>התחילי בהוספת המתאמנת הראשונה שלך!</p>
-            <a href="<?php echo admin_url('post-new.php?post_type=clients'); ?>" class="action-btn primary">
+            <button type="button" onclick="openAddClientModal()" class="action-btn primary">
                 ➕ הוסף מתאמנת חדשה
-            </a>
+            </button>
         </div>
     <?php endif; ?>
 </div>
