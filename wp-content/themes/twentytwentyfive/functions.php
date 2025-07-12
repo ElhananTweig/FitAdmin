@@ -1277,6 +1277,11 @@ function create_crm_pages() {
             'slug' => 'finished-clients', 
             'title' => 'מתאמנות שסיימו',
             'template' => 'page-finished-clients.php'
+        ),
+        array(
+            'slug'   => 'payments-management',
+            'title'  => 'ניהול תשלומים',
+            'template' => 'page-payments-management.php'
         )
     );
     

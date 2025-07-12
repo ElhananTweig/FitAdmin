@@ -868,7 +868,7 @@ get_header(); ?>
         </a>
         
         <?php if (current_user_can('manage_options')): ?>
-            <a href="<?php echo admin_url('admin.php?page=payments-management'); ?>" class="stat-card income" style="text-decoration: none; color: inherit;">
+            <a href="<?php echo home_url('/payments-management'); ?>" class="stat-card income" style="text-decoration: none; color: inherit;">
                 <div class="stat-icon">💰</div>
                 <div class="stat-number">₪<?php echo number_format($stats['total_income']); ?></div>
                 <div class="stat-label">הכנסות החודש</div>
@@ -1024,7 +1024,7 @@ get_header(); ?>
                     <span class="action-text">דוחות ואנליטיקס</span>
                 </a>
                 
-                <a href="<?php echo admin_url('admin.php?page=payments-management'); ?>" class="vertical-action-button" style="background: linear-gradient(135deg, #4f46e5, #4338ca); text-decoration: none; color: white;">
+                <a href="<?php echo home_url('/payments-management'); ?>" class="vertical-action-button" style="background: linear-gradient(135deg, #4f46e5, #4338ca); text-decoration: none; color: white;">
                     <span class="action-icon">💰</span>
                     <span class="action-text">ניהול תשלומים</span>
                 </a>
