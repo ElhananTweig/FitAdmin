@@ -428,6 +428,32 @@ if ( ! function_exists( 'twentytwentyfive_pattern_categories' ) ) :
 endif;
 add_action( 'init', 'twentytwentyfive_pattern_categories' );
 
+// הסתרת סרגל האדמין רק באתר (לא באדמין)
+function hide_admin_bar_from_frontend() {
+    // הסתרה רק באתר הפומבי, לא באדמין
+    if (!is_admin()) {
+        show_admin_bar(false);
+    }
+}
+add_action('init', 'hide_admin_bar_from_frontend');
+
+// הסרת CSS של סרגל האדמין מהצד הפומבי
+function remove_admin_bar_styles_frontend() {
+    if (!is_admin()) {
+        wp_deregister_style('admin-bar');
+        wp_dequeue_style('admin-bar');
+    }
+}
+add_action('wp_enqueue_scripts', 'remove_admin_bar_styles_frontend');
+
+// הסרת הרווח העליון שסרגל האדמין יוצר
+function remove_admin_bar_margin() {
+    if (!is_admin()) {
+        remove_action('wp_head', '_admin_bar_bump_cb');
+    }
+}
+add_action('get_header', 'remove_admin_bar_margin');
+
 // Registers block binding sources.
 if ( ! function_exists( 'twentytwentyfive_register_block_bindings' ) ) :
 	/**

@@ -44,7 +44,7 @@
             backdrop-filter: blur(20px);
             border-bottom: 1px solid rgba(16, 185, 129, 0.2);
             color: white;
-            padding: 20px 0;
+            padding: 15px 0;
             box-shadow: 0 8px 32px rgba(0,0,0,0.3);
             position: relative;
             z-index: 100;
@@ -53,22 +53,22 @@
         .crm-header-content {
             max-width: 1800px;
             margin: 0 auto;
-            padding: 0 30px;
-            display: grid;
-            grid-template-columns: 1fr auto 1fr;
+            padding: 0 15px;
+            display: flex;
+            flex-direction: column;
             align-items: center;
             direction: rtl;
-            gap: 20px;
+            gap: 15px;
         }
         
         .crm-logo {
-            font-size: 2rem;
+            font-size: 1.5rem;
             font-weight: 700;
             text-decoration: none;
             color: white;
             text-shadow: 0 2px 4px rgba(0,0,0,0.3);
-            justify-self: start;
             transition: all 0.3s ease;
+            text-align: center;
         }
         
         .crm-logo:hover {
@@ -78,30 +78,32 @@
         
         .crm-nav {
             display: flex;
-            gap: 12px;
+            gap: 8px;
             align-items: center;
             justify-content: center;
             flex-wrap: wrap;
-            justify-self: center;
+            width: 100%;
         }
         
         .crm-nav a {
             color: white;
             text-decoration: none;
             font-weight: 600;
-            font-size: 1.1rem;
-            padding: 14px 24px;
-            border-radius: 30px;
+            font-size: 0.85rem;
+            padding: 10px 16px;
+            border-radius: 25px;
             transition: all 0.3s ease;
             background: rgba(255,255,255,0.08);
             border: 1px solid rgba(16, 185, 129, 0.3);
             white-space: nowrap;
             backdrop-filter: blur(10px);
-            min-height: 50px;
+            min-height: 40px;
             display: flex;
             align-items: center;
+            justify-content: center;
             position: relative;
             overflow: hidden;
+            flex: 0 0 auto;
         }
         
         .crm-nav a::before {
@@ -128,24 +130,25 @@
         
         .user-actions {
             display: flex;
-            gap: 12px;
+            gap: 10px;
             align-items: center;
-            justify-self: end;
+            justify-content: center;
         }
         
         .user-actions a {
             color: white;
             text-decoration: none;
             font-weight: 600;
-            padding: 12px 20px;
+            padding: 10px 20px;
             border-radius: 25px;
             transition: all 0.3s ease;
             background: rgba(16, 185, 129, 0.1);
             border: 1px solid rgba(16, 185, 129, 0.4);
-            font-size: 1rem;
-            min-height: 45px;
+            font-size: 0.9rem;
+            min-height: 40px;
             display: flex;
             align-items: center;
+            justify-content: center;
             backdrop-filter: blur(10px);
         }
         
@@ -172,54 +175,72 @@
             padding: 20px;
         }
         
-        /* רספונסיבי */
-        @media (max-width: 1400px) {
-            .crm-nav {
-                gap: 10px;
-            }
-            
-            .crm-nav a {
-                padding: 12px 20px;
-                font-size: 1rem;
-            }
-        }
-        
-        @media (max-width: 1200px) {
-            .crm-nav {
-                gap: 8px;
-            }
-            
-            .crm-nav a {
-                padding: 10px 16px;
-                font-size: 0.95rem;
-            }
-            
-            .user-actions a {
-                padding: 10px 16px;
-                font-size: 0.9rem;
-            }
-        }
-        
-        @media (max-width: 992px) {
+        /* רספונסיבי מותאם לדסקטופ */
+        @media (min-width: 1200px) {
             .crm-header-content {
-                padding: 0 20px;
-                flex-direction: column;
-                gap: 15px;
+                display: grid;
+                grid-template-columns: 1fr auto 1fr;
+                align-items: center;
+                padding: 0 30px;
             }
             
             .crm-logo {
-                order: 1;
+                font-size: 2rem;
+                justify-self: start;
+                text-align: right;
             }
             
             .crm-nav {
-                order: 2;
-                gap: 8px;
-                justify-content: center;
+                gap: 12px;
+                justify-self: center;
+            }
+            
+            .crm-nav a {
+                font-size: 1.1rem;
+                padding: 14px 24px;
+                min-height: 50px;
             }
             
             .user-actions {
-                order: 3;
-                justify-content: center;
+                justify-self: end;
+                gap: 12px;
+            }
+            
+            .user-actions a {
+                font-size: 1rem;
+                padding: 12px 20px;
+                min-height: 45px;
+            }
+        }
+        
+        @media (min-width: 768px) and (max-width: 1199px) {
+            .crm-header-content {
+                display: grid;
+                grid-template-columns: 1fr auto 1fr;
+                align-items: center;
+                padding: 0 20px;
+            }
+            
+            .crm-logo {
+                font-size: 1.8rem;
+                justify-self: start;
+                text-align: right;
+            }
+            
+            .crm-nav {
+                gap: 10px;
+                justify-self: center;
+            }
+            
+            .crm-nav a {
+                font-size: 1rem;
+                padding: 12px 20px;
+                min-height: 45px;
+            }
+            
+            .user-actions {
+                justify-self: end;
+                gap: 10px;
             }
         }
         
