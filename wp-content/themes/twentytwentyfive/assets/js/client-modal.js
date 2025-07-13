@@ -158,7 +158,6 @@ class ClientModal {
 
     setDefaultValues() {
         document.getElementById('training_type').value = 'personal';
-        document.getElementById('amount_paid').value = '0';
     }
 
     async loadClientData(clientId) {
@@ -197,7 +196,12 @@ class ClientModal {
         Object.keys(clientData).forEach(key => {
             const field = document.getElementById(key);
             if (field && clientData[key] !== null && clientData[key] !== undefined) {
-                field.value = clientData[key];
+                // טיפול בגיל - אם הערך הוא 0, נשאיר את השדה ריק כדי שלא ייחשב כלא תקין
+                let value = clientData[key];
+                if (key === 'age' && (value === 0 || value === '0')) {
+                    value = '';
+                }
+                field.value = value;
             }
         });
 
@@ -334,7 +338,11 @@ class ClientModal {
             // הגדרת תאריך ברירת מחדל
             const paymentDate = document.getElementById('payment_date');
             if (!paymentDate.value) {
-                paymentDate.value = new Date().toISOString().split('T')[0];
+                const startDateField = document.getElementById('start_date');
+                const startDateValue = startDateField ? startDateField.value : '';
+
+                // אם קיים תאריך התחלה – נשתמש בו כברירת מחדל, אחרת התאריך של היום
+                paymentDate.value = startDateValue ? startDateValue : new Date().toISOString().split('T')[0];
             }
             // בדיקה אם צריך להציג שדה מספר תשלומים
             this.toggleInstallments();

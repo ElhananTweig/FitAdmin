@@ -193,7 +193,7 @@ $payment_methods = array(
                         
                         <div class="form-group">
                             <label for="amount_paid">סכום ששולם (₪)</label>
-                            <input type="number" id="amount_paid" name="amount_paid" min="0" step="0.01" value="0">
+                            <input type="number" id="amount_paid" name="amount_paid" min="0" step="0.01">
                         </div>
                     </div>
                     
