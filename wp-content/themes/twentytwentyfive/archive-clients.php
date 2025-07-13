@@ -638,7 +638,9 @@ get_header(); ?>
                         <?php endif; ?>
                         
                         <div class="client-detail">
-                            <strong>📅 תאריכים:</strong> <?php echo $start_date; ?> - <?php echo $end_date; ?>
+                            <strong>📅 תאריכים:</strong>
+                            <?php echo $start_date ? date('d.m.Y', strtotime($start_date)) : ''; ?> -
+                            <?php echo $end_date ? date('d.m.Y', strtotime($end_date)) : ''; ?>
                         </div>
                         
                         <?php if ($referral_source): ?>

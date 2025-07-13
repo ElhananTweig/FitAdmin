@@ -100,11 +100,11 @@ get_header(); ?>
                         <div style="margin-bottom: 10px; color: #d7dedc; font-size: 0.875rem; opacity: 0.9;">
                             <strong>📅 תאריכים:</strong>
                             <?php if ($group_start_date): ?>
-                                <?php echo date('d/m/Y', strtotime($group_start_date)); ?>
+                                <?php echo date('d.m.Y', strtotime($group_start_date)); ?>
                             <?php endif; ?>
                             <?php if ($group_start_date && $group_end_date): ?> - <?php endif; ?>
                             <?php if ($group_end_date): ?>
-                                <?php echo date('d/m/Y', strtotime($group_end_date)); ?>
+                                <?php echo date('d.m.Y', strtotime($group_end_date)); ?>
                             <?php endif; ?>
                         </div>
                     <?php endif; ?>
