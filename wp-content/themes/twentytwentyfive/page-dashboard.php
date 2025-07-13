@@ -4,6 +4,9 @@
  * עמוד דשבורד CRM מותאם לתצוגה ציבורית
  */
 
+// טעינת Font Awesome לאייקונים מודרניים
+wp_enqueue_style( 'crm-dashboard-fa', 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css', array(), '6.4.0' );
+
 get_header(); ?>
 
 <style>
@@ -55,16 +58,26 @@ get_header(); ?>
         box-shadow: 0 10px 30px rgba(0,0,0,0.15);
     }
     
-    .stat-card.active { border-right-color: #3b82f6; }
-    .stat-card.ending { border-right-color: #f59e0b; }
-    .stat-card.frozen { border-right-color: #8b5cf6; }
-    .stat-card.unpaid { border-right-color: #ef4444; }
-    .stat-card.income { border-right-color: #10b981; }
-    
-    .stat-icon {
+    .stat-card.active { border-right-color: #a7c7e7; }
+    .stat-card.ending { border-right-color: #f5d5a0; }
+    .stat-card.frozen { border-right-color: #d4c5f9; }
+    .stat-card.unpaid { border-right-color: #f5b7b1; }
+    .stat-card.income { border-right-color: #b8e6b8; }
+
+   .stat-icon {
         font-size: 3rem;
         margin-bottom: 15px;
     }
+    
+    /* אייקונים מודרניים צבעוניים */
+    .stat-icon i {
+        color: #d7dedc; /* ברירת מחדל בהירה */
+    }
+    .stat-card.active   .stat-icon i { color: #a7c7e7; }
+    .stat-card.ending   .stat-icon i { color: #f5d5a0; }
+    .stat-card.frozen   .stat-icon i { color: #d4c5f9; }
+    .stat-card.unpaid   .stat-icon i { color: #f5b7b1; }
+    .stat-card.income   .stat-icon i { color: #b8e6b8; }
     
     .stat-number {
         font-size: 3rem;
@@ -844,38 +857,38 @@ get_header(); ?>
     <!-- סטטיסטיקות כלליות -->
     <div class="stats-overview">
         <a href="<?php echo (get_post_type_archive_link('clients') ?: home_url('/clients/')) . '?filter=active'; ?>" class="stat-card active" style="text-decoration: none; color: inherit;">
-            <div class="stat-icon">👥</div>
-            <div class="stat-number"><?php echo $stats['active']; ?></div>
+            <div class="stat-icon"><i class="fa-solid fa-users"></i></div>
+       <div class="stat-number"><?php echo $stats['active']; ?></div>
             <div class="stat-label">מתאמנות פעילות</div>
         </a>
         
         <a href="<?php echo (get_post_type_archive_link('clients') ?: home_url('/clients/')) . '?filter=ending'; ?>" class="stat-card ending" style="text-decoration: none; color: inherit;">
-            <div class="stat-icon">⏰</div>
+            <div class="stat-icon"><i class="fa-regular fa-hourglass-half"></i></div>
             <div class="stat-number"><?php echo $stats['ending_soon']; ?></div>
             <div class="stat-label">מסיימות בקרוב</div>
         </a>
         
         <a href="<?php echo (get_post_type_archive_link('clients') ?: home_url('/clients/')) . '?filter=frozen'; ?>" class="stat-card frozen" style="text-decoration: none; color: inherit;">
-            <div class="stat-icon">⏸️</div>
+            <div class="stat-icon"><i class="fa-solid fa-pause-circle"></i></div>
             <div class="stat-number"><?php echo $stats['frozen']; ?></div>
             <div class="stat-label">בהקפאה</div>
         </a>
         
         <a href="<?php echo (get_post_type_archive_link('clients') ?: home_url('/clients/')) . '?filter=unpaid'; ?>" class="stat-card unpaid" style="text-decoration: none; color: inherit;">
-            <div class="stat-icon">💳</div>
+            <div class="stat-icon"><i class="fa-solid fa-credit-card"></i></div>
             <div class="stat-number"><?php echo $stats['unpaid'] + (isset($stats['partial']) ? $stats['partial'] : 0); ?></div>
             <div class="stat-label">ממתינות לתשלום</div>
         </a>
         
         <?php if (current_user_can('manage_options')): ?>
             <a href="<?php echo home_url('/payments-management'); ?>" class="stat-card income" style="text-decoration: none; color: inherit;">
-                <div class="stat-icon">💰</div>
+                <div class="stat-icon"><i class="fa-solid fa-shekel-sign"></i></div>
                 <div class="stat-number">₪<?php echo number_format($stats['total_income']); ?></div>
                 <div class="stat-label">הכנסות החודש</div>
             </a>
         <?php else: ?>
             <div class="stat-card income">
-                <div class="stat-icon">💰</div>
+                <div class="stat-icon"><i class="fa-solid fa-shekel-sign"></i></div>
                 <div class="stat-number">₪<?php echo number_format($stats['total_income']); ?></div>
                 <div class="stat-label">הכנסות החודש</div>
             </div>
@@ -887,7 +900,8 @@ get_header(); ?>
         <!-- מתאמנות שמסיימות בקרוב -->
         <div class="dashboard-section">
             <h3 class="section-title">
-                ⏰ מתאמנות שמסיימות בקרוב
+                <i class="fa-regular fa-hourglass-half" style="color:#f5d5a0;"></i>
+                מתאמנות שמסיימות בקרוב
             </h3>
             <?php if ($ending_soon && function_exists('get_field')): ?>
                 <?php foreach ($ending_soon as $client): ?>
@@ -914,7 +928,8 @@ get_header(); ?>
         <div class="dashboard-section">
             <h3 class="section-title">
                 <a href="<?php echo (get_post_type_archive_link('clients') ?: home_url('/clients/')) . '?filter=frozen'; ?>" style="color: inherit; text-decoration: none; display: flex; align-items: center; gap: 10px;">
-                    ⏸️ מתאמנות בהקפאה
+                    <i class="fa-solid fa-pause-circle" style="color:#d4c5f9;"></i>
+                    מתאמנות בהקפאה
                     <span style="font-size: 0.8rem; color: #6b7280;">👆 לחצי לצפייה</span>
                 </a>
             </h3>
