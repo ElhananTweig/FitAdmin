@@ -515,6 +515,18 @@ get_header(); ?>
                 $referral_source = get_field('referral_source');
                 $amount_paid = get_field('amount_paid');
                 $payment_amount = get_field('payment_amount');
+                
+                // חישוב סך כל התשלומים כולל תשלומים נוספים
+                $total_amount_paid = floatval($amount_paid);
+                $additional_payments = get_field('additional_payments');
+                if ($additional_payments && is_array($additional_payments)) {
+                    foreach ($additional_payments as $payment) {
+                        if (isset($payment['amount']) && is_numeric($payment['amount'])) {
+                            $total_amount_paid += floatval($payment['amount']);
+                        }
+                    }
+                }
+                
                 $mentor = get_field('mentor');
                 $training_type = get_field('training_type');
                 $group_id = get_field('group_id');
@@ -572,12 +584,12 @@ get_header(); ?>
                 }
                 
                 // טיפול בסטטוס תשלום
-                if ($amount_paid == 0) {
+                if ($total_amount_paid == 0) {
                     $card_class .= ' unpaid';
                     // הוספת סטטוס unpaid לכל הסטטוסים הקיימים
                     $status_parts = array_unique(array_merge(explode(' ', $status), array('unpaid')));
                     $status = implode(' ', $status_parts);
-                } elseif ($payment_amount && $amount_paid > 0 && $amount_paid < $payment_amount) {
+                } elseif ($payment_amount && $total_amount_paid > 0 && $total_amount_paid < $payment_amount) {
                     $card_class .= ' partial';
                     // הוספת סטטוס partial לכל הסטטוסים הקיימים
                     $status_parts = array_unique(array_merge(explode(' ', $status), array('partial')));
@@ -612,9 +624,9 @@ get_header(); ?>
                     
                     <div class="client-status status-<?php echo str_replace(' ', '-', $status); ?>">
                         <?php echo $status_text; ?>
-                        <?php if ($amount_paid == 0): ?>
+                        <?php if ($total_amount_paid == 0): ?>
                             + לא שילמה
-                        <?php elseif ($payment_amount && $amount_paid > 0 && $amount_paid < $payment_amount): ?>
+                        <?php elseif ($payment_amount && $total_amount_paid > 0 && $total_amount_paid < $payment_amount): ?>
                             + שילמה חלקית
                         <?php endif; ?>
                     </div>
@@ -659,9 +671,12 @@ get_header(); ?>
                             </div>
                         <?php endif; ?>
                         
-                        <?php if ($amount_paid !== null && $payment_amount): ?>
+                        <?php if ($total_amount_paid !== null && $payment_amount): ?>
                             <div class="client-detail">
-                                <strong>💰 תשלום:</strong> ₪<?php echo number_format($amount_paid); ?> / ₪<?php echo number_format($payment_amount); ?>
+                                <strong>💰 תשלום:</strong> ₪<?php echo number_format($total_amount_paid); ?> / ₪<?php echo number_format($payment_amount); ?>
+                                <?php if ($additional_payments && count($additional_payments) > 0): ?>
+                                    <span style="color: #10b981; font-size: 0.8em;">(<?php echo count($additional_payments); ?> תשלומים נוספים)</span>
+                                <?php endif; ?>
                             </div>
                         <?php endif; ?>
                     </div>

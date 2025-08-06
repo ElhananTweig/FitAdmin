@@ -223,6 +223,25 @@ $payment_methods = array(
                             </div>
                         </div>
                     </div>
+                    
+                    <!-- כפתור להוספת תשלום נוסף -->
+                    <div class="form-row" style="margin-top: 15px;">
+                        <div class="form-group full-width">
+                            <button type="button" id="add-payment-btn" class="btn btn-secondary" style="width: 100%;">
+                                ➕ הוסף תשלום נוסף
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- אזור תשלומים נוספים -->
+                    <div id="additional-payments-container" style="display: none;">
+                        <h4 style="margin: 20px 0 15px 0; color: #374151; border-bottom: 2px solid #e5e7eb; padding-bottom: 8px;">
+                            💳 תשלומים נוספים
+                        </h4>
+                        <div id="additional-payments-list">
+                            <!-- תשלומים נוספים יוכנסו כאן דינמית -->
+                        </div>
+                    </div>
                 </div>
                 
                 <!-- משקל -->

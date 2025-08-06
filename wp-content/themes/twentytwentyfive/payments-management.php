@@ -27,6 +27,18 @@ function get_payments_data() {
     foreach ($clients as $client) {
         $payment_amount = (float) get_field('payment_amount', $client->ID);
         $amount_paid = (float) get_field('amount_paid', $client->ID);
+        
+        // חישוב סך כל התשלומים כולל תשלומים נוספים
+        $total_amount_paid = $amount_paid;
+        $additional_payments = get_field('additional_payments', $client->ID);
+        if ($additional_payments && is_array($additional_payments)) {
+            foreach ($additional_payments as $payment) {
+                if (isset($payment['amount']) && is_numeric($payment['amount'])) {
+                    $total_amount_paid += floatval($payment['amount']);
+                }
+            }
+        }
+        
         $payment_method = get_field('payment_method', $client->ID);
         $payment_date = get_field('payment_date', $client->ID);
         $start_date = get_field('start_date', $client->ID);
@@ -34,11 +46,11 @@ function get_payments_data() {
         $last_name = get_field('last_name', $client->ID);
         $phone = get_field('phone', $client->ID);
         
-        $pending_amount = $payment_amount - $amount_paid;
+        $pending_amount = $payment_amount - $total_amount_paid;
         
         // חישוב סטטיסטיקות כלליות
         $payments_data['total_expected'] += $payment_amount;
-        $payments_data['total_received'] += $amount_paid;
+        $payments_data['total_received'] += $total_amount_paid;
         $payments_data['total_pending'] += $pending_amount;
         
         // נתוני לקוח
@@ -47,22 +59,22 @@ function get_payments_data() {
             'name' => $first_name . ' ' . $last_name,
             'phone' => $phone,
             'payment_amount' => $payment_amount,
-            'amount_paid' => $amount_paid,
+            'amount_paid' => $total_amount_paid,
             'pending_amount' => $pending_amount,
             'payment_method' => $payment_method,
             'payment_date' => $payment_date,
             'start_date' => $start_date,
-            'status' => $pending_amount <= 0 ? 'paid' : ($amount_paid > 0 ? 'partial' : 'unpaid')
+            'status' => $pending_amount <= 0 ? 'paid' : ($total_amount_paid > 0 ? 'partial' : 'unpaid')
         );
         
         $payments_data['clients_data'][] = $client_data;
         
         // ספירת אמצעי תשלום
-        if ($payment_method && $amount_paid > 0) {
+        if ($payment_method && $total_amount_paid > 0) {
             if (!isset($payments_data['payment_methods'][$payment_method])) {
                 $payments_data['payment_methods'][$payment_method] = 0;
             }
-            $payments_data['payment_methods'][$payment_method] += $amount_paid;
+            $payments_data['payment_methods'][$payment_method] += $total_amount_paid;
         }
         
         // פירוק חודשי
@@ -71,7 +83,7 @@ function get_payments_data() {
             if (!isset($payments_data['monthly_breakdown'][$month])) {
                 $payments_data['monthly_breakdown'][$month] = 0;
             }
-            $payments_data['monthly_breakdown'][$month] += $amount_paid;
+            $payments_data['monthly_breakdown'][$month] += $total_amount_paid;
         }
     }
     
@@ -221,10 +233,12 @@ $payment_method_labels = array(
                         
                         <td style="padding: 15px;">
                             <div style="display: flex; gap: 8px;">
-                                <a href="<?php echo admin_url('admin.php?page=add-client-form&edit=' . $client['id']); ?>" 
-                                   style="padding: 6px 12px; background: #3b82f6; color: white; text-decoration: none; border-radius: 4px; font-size: 0.875rem;">
+                                <button type="button" 
+                                        onclick="openEditClientModal(<?php echo $client['id']; ?>)" 
+                                        style="padding: 6px 12px; background: #3b82f6; color: white; text-decoration: none; border-radius: 4px; font-size: 0.875rem; border: none; cursor: pointer; width: 100%;">
                                     ✏️ ערוך
-                                </a>
+                                </button>
+
                                 <?php if ($client['phone']): ?>
                                     <a href="tel:<?php echo $client['phone']; ?>" 
                                        style="padding: 6px 12px; background: #059669; color: white; text-decoration: none; border-radius: 4px; font-size: 0.875rem;">

@@ -401,6 +401,17 @@ get_header(); ?>
             $is_frozen = get_field('is_frozen', $client->ID);
             $amount_paid = (float) get_field('amount_paid', $client->ID);
             $payment_amount = (float) get_field('payment_amount', $client->ID);
+            
+            // חישוב סך כל התשלומים כולל תשלומים נוספים
+            $total_amount_paid = $amount_paid;
+            $additional_payments = get_field('additional_payments', $client->ID);
+            if ($additional_payments && is_array($additional_payments)) {
+                foreach ($additional_payments as $payment) {
+                    if (isset($payment['amount']) && is_numeric($payment['amount'])) {
+                        $total_amount_paid += floatval($payment['amount']);
+                    }
+                }
+            }
             $referral_source = get_field('referral_source', $client->ID);
             
             // ספירת פעילים
@@ -419,9 +430,9 @@ get_header(); ?>
             }
             
             // ספירת סטטוס תשלום
-            if ($amount_paid == 0) {
+            if ($total_amount_paid == 0) {
                 $stats['unpaid']++;
-            } elseif ($payment_amount && $amount_paid > 0 && $amount_paid < $payment_amount) {
+            } elseif ($payment_amount && $total_amount_paid > 0 && $total_amount_paid < $payment_amount) {
                 // אם יש סכום לתשלום והתשלום חלקי
                 if (!isset($stats['partial'])) {
                     $stats['partial'] = 0;
@@ -432,7 +443,7 @@ get_header(); ?>
             }
             
             // חישוב הכנסות
-            $stats['total_income'] += $amount_paid;
+            $stats['total_income'] += $total_amount_paid;
             
             // ספירת מקורות הגעה
             if ($referral_source) {
@@ -1147,7 +1158,19 @@ get_header(); ?>
                     <?php foreach ($weekly_data['updated_payments'] as $client): ?>
                         <div style="font-size: 0.9rem; opacity: 0.9; margin-bottom: 8px; padding: 8px; background: rgba(255,255,255,0.1); border-radius: 8px;">
                             • <?php echo get_field('first_name', $client->ID) . ' ' . get_field('last_name', $client->ID); ?> - 
-                            ₪<?php echo number_format(get_field('amount_paid', $client->ID)); ?>
+                            <?php 
+                            $amount_paid = (float) get_field('amount_paid', $client->ID);
+                            $additional_payments = get_field('additional_payments', $client->ID);
+                            $total_amount_paid = $amount_paid;
+                            if ($additional_payments && is_array($additional_payments)) {
+                                foreach ($additional_payments as $payment) {
+                                    if (isset($payment['amount']) && is_numeric($payment['amount'])) {
+                                        $total_amount_paid += floatval($payment['amount']);
+                                    }
+                                }
+                            }
+                            ?>
+                            ₪<?php echo number_format($total_amount_paid); ?>
                             <br><span style="font-size: 0.8rem; opacity: 0.8;">
                                 עודכן: <?php echo date('d/m/Y', strtotime($client->post_modified)); ?>
                                 <?php if (get_field('payment_date', $client->ID)): ?>

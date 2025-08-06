@@ -1440,7 +1440,8 @@ function get_client_data_ajax() {
         'current_weight' => get_field('current_weight', $client_id),
         'target_weight' => get_field('target_weight', $client_id),
         'training_type' => get_field('training_type', $client_id),
-        'notes' => get_field('notes', $client_id)
+        'notes' => get_field('notes', $client_id),
+        'additional_payments' => get_field('additional_payments', $client_id)
     );
     
     // טיפול במנטורית
@@ -1530,7 +1531,25 @@ function add_client_ajax() {
         }
         update_field('notes', $notes, $post_id);
         
-        wp_send_json_success(array('message' => 'המתאמנת נוספה בהצלחה!', 'post_id' => $post_id));
+        // טיפול בתשלומים נוספים
+        if (isset($_POST['additional_payments']) && is_array($_POST['additional_payments'])) {
+            $additional_payments = array();
+            foreach ($_POST['additional_payments'] as $payment_data) {
+                if (!empty($payment_data['amount'])) {
+                    $additional_payments[] = array(
+                        'amount' => floatval($payment_data['amount']),
+                        'method' => sanitize_text_field($payment_data['method']),
+                        'date' => sanitize_text_field($payment_data['date']),
+                        'installments' => intval($payment_data['installments'])
+                    );
+                }
+            }
+            if (!empty($additional_payments)) {
+                update_field('additional_payments', $additional_payments, $post_id);
+            }
+        }
+        
+        wp_send_json_success(array('message' => 'תאמנת נוספה בהצלחה!', 'post_id' => $post_id));
     } else {
         wp_send_json_error(array('message' => 'שגיאה ביצירת המתאמנת'));
     }
@@ -1609,7 +1628,25 @@ function edit_client_ajax() {
         }
         update_field('notes', $notes, $client_id);
         
-        wp_send_json_success(array('message' => 'המתאמנת עודכנה בהצלחה!'));
+        // טיפול בתשלומים נוספים
+        if (isset($_POST['additional_payments']) && is_array($_POST['additional_payments'])) {
+            $additional_payments = array();
+            foreach ($_POST['additional_payments'] as $payment_data) {
+                if (!empty($payment_data['amount'])) {
+                    $additional_payments[] = array(
+                        'amount' => floatval($payment_data['amount']),
+                        'method' => sanitize_text_field($payment_data['method']),
+                        'date' => sanitize_text_field($payment_data['date']),
+                        'installments' => intval($payment_data['installments'])
+                    );
+                }
+            }
+            if (!empty($additional_payments)) {
+                update_field('additional_payments', $additional_payments, $client_id);
+            }
+        }
+        
+        wp_send_json_success(array('message' => 'תאמנת עודכנה בהצלחה!'));
     } else {
         wp_send_json_error(array('message' => 'שגיאה בעדכון המתאמנת'));
     }

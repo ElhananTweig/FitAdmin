@@ -75,6 +75,12 @@ class ClientModal {
             startDate.addEventListener('change', () => this.updateEndDate());
         }
 
+        // כפתור להוספת תשלום נוסף
+        const addPaymentBtn = document.getElementById('add-payment-btn');
+        if (addPaymentBtn) {
+            addPaymentBtn.addEventListener('click', () => this.addAdditionalPayment());
+        }
+
         // אפקטים ויזואליים
         this.setupFormEffects();
 
@@ -152,6 +158,9 @@ class ClientModal {
             installmentsInput.required = false;
         }
 
+        // איפוס תשלומים נוספים
+        this.resetAdditionalPayments();
+
         // הסרת הודעות
         this.removeAllAlerts();
     }
@@ -218,6 +227,11 @@ class ClientModal {
         // הפעלת לוגיקת מספר תשלומים אם נטענו נתוני תשלום
         if (clientData.payment_method) {
             this.toggleInstallments();
+        }
+
+        // טעינת תשלומים נוספים
+        if (clientData.additional_payments && Array.isArray(clientData.additional_payments)) {
+            this.loadAdditionalPayments(clientData.additional_payments);
         }
     }
 
@@ -434,6 +448,174 @@ class ClientModal {
     removeAllAlerts() {
         const alerts = this.modal.querySelectorAll('.alert');
         alerts.forEach(alert => alert.remove());
+    }
+
+    // פונקציות לניהול תשלומים נוספים
+    addAdditionalPayment() {
+        const container = document.getElementById('additional-payments-container');
+        const list = document.getElementById('additional-payments-list');
+        const paymentIndex = list.children.length + 1;
+
+        const paymentHtml = this.createAdditionalPaymentHtml(paymentIndex);
+        list.insertAdjacentHTML('beforeend', paymentHtml);
+
+        // הצגת האזור
+        container.style.display = 'block';
+
+        // הוספת אירועים לשדות החדשים
+        this.setupAdditionalPaymentEvents(paymentIndex);
+
+        // עדכון כפתור ההוספה
+        this.updateAddPaymentButton();
+    }
+
+    createAdditionalPaymentHtml(index) {
+        const paymentMethods = {
+            'cash': 'מזומן',
+            'credit': 'כרטיס אשראי',
+            'bank_transfer': 'העברה בנקאית',
+            'paypal': 'PayPal',
+            'bit': 'Bit'
+        };
+
+        const methodsOptions = Object.entries(paymentMethods)
+            .map(([key, label]) => `<option value="${key}">${label}</option>`)
+            .join('');
+
+        return `
+            <div class="additional-payment-item" data-payment-index="${index}">
+                <div class="payment-header">
+                    <h5>💳 תשלום #${index}</h5>
+                    <button type="button" class="remove-payment-btn" onclick="clientModalInstance.removeAdditionalPayment(${index})">
+                        🗑️ הסר
+                    </button>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="additional_amount_${index}">סכום תשלום (₪) <span class="required">*</span></label>
+                        <input type="number" id="additional_amount_${index}" name="additional_payments[${index}][amount]" min="0" step="0.01" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="additional_method_${index}">אמצעי תשלום</label>
+                        <select id="additional_method_${index}" name="additional_payments[${index}][method]">
+                            <option value="">בחר אמצעי תשלום...</option>
+                            ${methodsOptions}
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="additional_date_${index}">תאריך תשלום</label>
+                        <input type="date" id="additional_date_${index}" name="additional_payments[${index}][date]">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="additional_installments_${index}">מספר תשלומים</label>
+                        <input type="number" id="additional_installments_${index}" name="additional_payments[${index}][installments]" min="1" max="99" placeholder="הזן מספר תשלומים" style="display: none;">
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    setupAdditionalPaymentEvents(index) {
+        // אירוע לשינוי אמצעי תשלום
+        const methodSelect = document.getElementById(`additional_method_${index}`);
+        if (methodSelect) {
+            methodSelect.addEventListener('change', () => this.toggleAdditionalInstallments(index));
+        }
+
+        // הגדרת תאריך ברירת מחדל
+        const dateInput = document.getElementById(`additional_date_${index}`);
+        if (dateInput && !dateInput.value) {
+            dateInput.value = new Date().toISOString().split('T')[0];
+        }
+    }
+
+    toggleAdditionalInstallments(index) {
+        const methodSelect = document.getElementById(`additional_method_${index}`);
+        const installmentsInput = document.getElementById(`additional_installments_${index}`);
+        
+        if (methodSelect && installmentsInput) {
+            if (methodSelect.value === 'credit') {
+                installmentsInput.style.display = 'block';
+                installmentsInput.required = true;
+            } else {
+                installmentsInput.style.display = 'none';
+                installmentsInput.required = false;
+                installmentsInput.value = '';
+            }
+        }
+    }
+
+    removeAdditionalPayment(index) {
+        const paymentItem = document.querySelector(`[data-payment-index="${index}"]`);
+        if (paymentItem) {
+            paymentItem.remove();
+            this.updateAddPaymentButton();
+            
+            // אם אין יותר תשלומים נוספים, הסתר את האזור
+            const list = document.getElementById('additional-payments-list');
+            if (list.children.length === 0) {
+                document.getElementById('additional-payments-container').style.display = 'none';
+            }
+        }
+    }
+
+    updateAddPaymentButton() {
+        const addBtn = document.getElementById('add-payment-btn');
+        const list = document.getElementById('additional-payments-list');
+        const paymentCount = list.children.length;
+        
+        if (addBtn) {
+            addBtn.textContent = `➕ הוסף תשלום נוסף (${paymentCount + 1})`;
+        }
+    }
+
+    // פונקציה לאיפוס תשלומים נוספים
+    resetAdditionalPayments() {
+        const container = document.getElementById('additional-payments-container');
+        const list = document.getElementById('additional-payments-list');
+        
+        if (container && list) {
+            list.innerHTML = '';
+            container.style.display = 'none';
+            this.updateAddPaymentButton();
+        }
+    }
+
+    // פונקציה לטעינת תשלומים נוספים
+    loadAdditionalPayments(additionalPaymentsData) {
+        const container = document.getElementById('additional-payments-container');
+        const list = document.getElementById('additional-payments-list');
+        
+        if (!container || !list) return;
+        
+        additionalPaymentsData.forEach((payment, index) => {
+            const paymentIndex = index + 1;
+            const paymentHtml = this.createAdditionalPaymentHtml(paymentIndex);
+            list.insertAdjacentHTML('beforeend', paymentHtml);
+            
+            // מילוי הנתונים
+            const amountInput = document.getElementById(`additional_amount_${paymentIndex}`);
+            const methodSelect = document.getElementById(`additional_method_${paymentIndex}`);
+            const dateInput = document.getElementById(`additional_date_${paymentIndex}`);
+            const installmentsInput = document.getElementById(`additional_installments_${paymentIndex}`);
+            
+            if (amountInput) amountInput.value = payment.amount || '';
+            if (methodSelect) methodSelect.value = payment.method || '';
+            if (dateInput) dateInput.value = payment.date || '';
+            if (installmentsInput) installmentsInput.value = payment.installments || '';
+            
+            this.setupAdditionalPaymentEvents(paymentIndex);
+        });
+        
+        // הצגת האזור
+        container.style.display = 'block';
+        this.updateAddPaymentButton();
     }
 }
 

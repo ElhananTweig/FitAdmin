@@ -54,6 +54,17 @@ function get_clients_stats() {
         $amount_paid = (float) get_field('amount_paid', $client->ID);
         $payment_amount = (float) get_field('payment_amount', $client->ID);
         
+        // חישוב סך כל התשלומים כולל תשלומים נוספים
+        $total_amount_paid = $amount_paid;
+        $additional_payments = get_field('additional_payments', $client->ID);
+        if ($additional_payments && is_array($additional_payments)) {
+            foreach ($additional_payments as $payment) {
+                if (isset($payment['amount']) && is_numeric($payment['amount'])) {
+                    $total_amount_paid += floatval($payment['amount']);
+                }
+            }
+        }
+        
         // ספירת פעילים
         if ($end_date >= $today && !$is_frozen) {
             $stats['active']++;
@@ -70,16 +81,16 @@ function get_clients_stats() {
         }
         
         // ספירת סטטוס תשלום
-        if ($amount_paid == 0) {
+        if ($total_amount_paid == 0) {
             $stats['unpaid']++;
-        } elseif ($payment_amount && $amount_paid > 0 && $amount_paid < $payment_amount) {
+        } elseif ($payment_amount && $total_amount_paid > 0 && $total_amount_paid < $payment_amount) {
             $stats['partial']++;
         } else {
             $stats['paid']++;
         }
         
         // חישוב הכנסות
-        $stats['total_income'] += $amount_paid;
+        $stats['total_income'] += $total_amount_paid;
     }
     
     return $stats;

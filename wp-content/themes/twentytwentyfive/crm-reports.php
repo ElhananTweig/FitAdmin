@@ -27,6 +27,18 @@ function get_detailed_reports() {
         $start_date = get_field('start_date', $client->ID);
         $end_date = get_field('end_date', $client->ID);
         $amount_paid = (float) get_field('amount_paid', $client->ID);
+        
+        // חישוב סך כל התשלומים כולל תשלומים נוספים
+        $total_amount_paid = $amount_paid;
+        $additional_payments = get_field('additional_payments', $client->ID);
+        if ($additional_payments && is_array($additional_payments)) {
+            foreach ($additional_payments as $payment) {
+                if (isset($payment['amount']) && is_numeric($payment['amount'])) {
+                    $total_amount_paid += floatval($payment['amount']);
+                }
+            }
+        }
+        
         $referral_source = get_field('referral_source', $client->ID);
         $start_weight = get_field('start_weight', $client->ID);
         $current_weight = get_field('current_weight', $client->ID);
@@ -37,7 +49,7 @@ function get_detailed_reports() {
             if (!isset($reports['monthly_income'][$month])) {
                 $reports['monthly_income'][$month] = 0;
             }
-            $reports['monthly_income'][$month] += $amount_paid;
+            $reports['monthly_income'][$month] += $total_amount_paid;
         }
         
         // מקורות הגעה
