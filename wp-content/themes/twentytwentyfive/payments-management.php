@@ -90,6 +90,8 @@ $payments_data = get_payments_data();
 $current_month = date('Y-m');
 $monthly_deals = 0;
 $monthly_expected_income = 0;
+$monthly_deals_clients   = array(); // פירוט עסקאות החודש
+$monthly_expected_clients = array(); // פירוט הכנסות צפויות
 
 $all_clients_for_monthly = get_posts(array(
     'post_type' => 'clients',
@@ -100,27 +102,36 @@ $all_clients_for_monthly = get_posts(array(
 foreach ($all_clients_for_monthly as $c) {
     $payment_amount_c = (float) get_field('payment_amount', $c->ID);
     $amount_paid_c    = (float) get_field('amount_paid', $c->ID);
+    $first_name_c     = get_field('first_name', $c->ID);
+    $last_name_c      = get_field('last_name', $c->ID);
+    $client_name_c    = trim($first_name_c . ' ' . $last_name_c);
 
     // עסקאות החודש
     $post_month = date('Y-m', strtotime($c->post_date));
-    if ($post_month === $current_month) {
+    if ($post_month === $current_month && $payment_amount_c > 0) {
         $monthly_deals += $payment_amount_c;
+        $monthly_deals_clients[] = array(
+            'name'   => $client_name_c,
+            'amount' => $payment_amount_c,
+        );
     }
 
     // הכנסות צפויות החודש
     $payment_date_primary  = get_field('payment_date', $c->ID);
     $installments_primary  = intval(get_field('installments', $c->ID));
+    $client_expected       = 0;
+
     if ($payment_date_primary && $amount_paid_c > 0) {
         if ($installments_primary > 1) {
             $pay_month = date('Y-m', strtotime($payment_date_primary));
             $diff = (intval(date('Y')) - intval(substr($pay_month, 0, 4))) * 12
                   + (intval(date('m')) - intval(substr($pay_month, 5, 2)));
             if ($diff >= 0 && $diff < $installments_primary) {
-                $monthly_expected_income += $amount_paid_c / $installments_primary;
+                $client_expected += $amount_paid_c / $installments_primary;
             }
         } else {
             if (date('Y-m', strtotime($payment_date_primary)) === $current_month) {
-                $monthly_expected_income += $amount_paid_c;
+                $client_expected += $amount_paid_c;
             }
         }
     }
@@ -137,16 +148,28 @@ foreach ($all_clients_for_monthly as $c) {
                 $diff = (intval(date('Y')) - intval(substr($ap_month, 0, 4))) * 12
                       + (intval(date('m')) - intval(substr($ap_month, 5, 2)));
                 if ($diff >= 0 && $diff < $ap_inst) {
-                    $monthly_expected_income += $ap_amount / $ap_inst;
+                    $client_expected += $ap_amount / $ap_inst;
                 }
             } else {
                 if (date('Y-m', strtotime($ap_date)) === $current_month) {
-                    $monthly_expected_income += $ap_amount;
+                    $client_expected += $ap_amount;
                 }
             }
         }
     }
+
+    if ($client_expected > 0) {
+        $monthly_expected_income += $client_expected;
+        $monthly_expected_clients[] = array(
+            'name'   => $client_name_c,
+            'amount' => $client_expected,
+        );
+    }
 }
+
+// מיון לפי סכום יורד
+usort($monthly_deals_clients,    fn($a, $b) => $b['amount'] <=> $a['amount']);
+usort($monthly_expected_clients, fn($a, $b) => $b['amount'] <=> $a['amount']);
 
 $payment_method_labels = array(
     'cash' => 'מזומן',
@@ -508,7 +531,160 @@ $payment_method_labels = array(
         grid-template-columns: 1fr;
     }
 }
+
+/* Modal פירוט כרטיסיות */
+.breakdown-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.55);
+    z-index: 9000;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    backdrop-filter: blur(3px);
+}
+
+.breakdown-overlay.open {
+    display: flex;
+}
+
+.breakdown-modal {
+    background: rgba(28, 50, 38, 0.95);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.85);
+    border-radius: 20px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+    width: 100%;
+    max-width: 520px;
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
+    animation: modalSlideUp 0.25s ease;
+}
+
+@keyframes modalSlideUp {
+    from { opacity: 0; transform: translateY(30px) scale(0.97); }
+    to   { opacity: 1; transform: translateY(0)   scale(1);    }
+}
+
+.breakdown-modal-header {
+    padding: 22px 28px 18px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+}
+
+.breakdown-modal-header h2 {
+    color: #d7dedc;
+    font-size: 1.25rem;
+    font-weight: 700;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+}
+
+.breakdown-modal-close {
+    background: rgba(255,255,255,0.10);
+    border: 1px solid rgba(255,255,255,0.25);
+    color: #d7dedc;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    flex-shrink: 0;
+}
+
+.breakdown-modal-close:hover {
+    background: rgba(255,255,255,0.22);
+}
+
+.breakdown-modal-total {
+    padding: 14px 28px;
+    border-bottom: 1px solid rgba(255,255,255,0.10);
+    color: #d7dedc;
+    font-size: 0.9rem;
+    flex-shrink: 0;
+}
+
+.breakdown-modal-total span {
+    font-weight: 700;
+    font-size: 1.1rem;
+}
+
+.breakdown-modal-body {
+    overflow-y: auto;
+    padding: 8px 0;
+    flex: 1;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255,255,255,0.25) transparent;
+}
+
+.breakdown-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 13px 28px;
+    border-bottom: 1px solid rgba(255,255,255,0.07);
+    transition: background 0.15s;
+}
+
+.breakdown-row:last-child { border-bottom: none; }
+
+.breakdown-row:hover { background: rgba(255,255,255,0.05); }
+
+.breakdown-row-name {
+    color: #d7dedc;
+    font-weight: 600;
+    font-size: 0.97rem;
+}
+
+.breakdown-row-amount {
+    font-weight: 700;
+    font-size: 1rem;
+}
+
+.breakdown-row-amount.deals  { color: #99e6d4; }
+.breakdown-row-amount.income { color: #b8e6b8; }
+
+.breakdown-empty {
+    padding: 30px 28px;
+    color: rgba(215,222,220,0.6);
+    text-align: center;
+    font-size: 0.95rem;
+}
+
+.stat-card.clickable {
+    cursor: pointer;
+}
+
+.stat-card.clickable:hover .stat-label::after {
+    content: ' ←';
+    opacity: 0.7;
+}
 </style>
+
+<!-- Modal פירוט כרטיסיות -->
+<div class="breakdown-overlay" id="breakdown-overlay" onclick="closeBreakdownModal(event)">
+    <div class="breakdown-modal" role="dialog" aria-modal="true">
+        <div class="breakdown-modal-header">
+            <h2 id="breakdown-title"><i class="fa-solid fa-list-ul"></i> <span></span></h2>
+            <button class="breakdown-modal-close" onclick="forceCloseBreakdown()" aria-label="סגור">✕</button>
+        </div>
+        <div class="breakdown-modal-total" id="breakdown-total"></div>
+        <div class="breakdown-modal-body" id="breakdown-body"></div>
+    </div>
+</div>
 
 <div class="crm-payments-page">
 
@@ -524,13 +700,13 @@ $payment_method_labels = array(
             <div class="stat-label">ממתין לתשלום</div>
         </div>
 
-        <div class="stat-card deals">
+        <div class="stat-card deals clickable" onclick="openBreakdownModal('deals')" role="button" tabindex="0" aria-label="פירוט עסקאות החודש">
             <div class="stat-icon"><i class="fa-solid fa-handshake"></i></div>
             <div class="stat-number">₪<?php echo number_format($monthly_deals); ?></div>
             <div class="stat-label">עסקאות החודש</div>
         </div>
 
-        <div class="stat-card income">
+        <div class="stat-card income clickable" onclick="openBreakdownModal('income')" role="button" tabindex="0" aria-label="פירוט הכנסות צפויות החודש">
             <div class="stat-icon"><i class="fa-solid fa-shekel-sign"></i></div>
             <div class="stat-number">₪<?php echo number_format($monthly_expected_income); ?></div>
             <div class="stat-label">הכנסות צפויות החודש</div>
@@ -700,6 +876,67 @@ function clearFilters() {
 document.getElementById('status-filter').addEventListener('change', filterTable);
 document.getElementById('method-filter').addEventListener('change', filterTable);
 document.getElementById('search-filter').addEventListener('input', filterTable);
+
+// נתוני פירוט כרטיסיות
+const dealsClients    = <?php echo json_encode($monthly_deals_clients, JSON_UNESCAPED_UNICODE); ?>;
+const expectedClients = <?php echo json_encode($monthly_expected_clients, JSON_UNESCAPED_UNICODE); ?>;
+const currentMonthHe  = new Date().toLocaleDateString('he-IL', { year: 'numeric', month: 'long' });
+
+function openBreakdownModal(type) {
+    const overlay = document.getElementById('breakdown-overlay');
+    const title   = document.querySelector('#breakdown-title span');
+    const total   = document.getElementById('breakdown-total');
+    const body    = document.getElementById('breakdown-body');
+
+    const isDeals  = type === 'deals';
+    const clients  = isDeals ? dealsClients : expectedClients;
+    const amtClass = isDeals ? 'deals' : 'income';
+    const icon     = isDeals ? 'fa-handshake' : 'fa-shekel-sign';
+
+    document.querySelector('#breakdown-title i').className = `fa-solid ${icon}`;
+    title.textContent = isDeals ? `עסקאות החודש — ${currentMonthHe}` : `הכנסות צפויות — ${currentMonthHe}`;
+
+    const sum = clients.reduce((acc, c) => acc + c.amount, 0);
+    total.innerHTML = isDeals
+        ? `<span>${clients.length}</span> עסקאות | סה"כ: <span>₪${Math.round(sum).toLocaleString()}</span>`
+        : `<span>${clients.length}</span> מתאמנות | סה"כ צפוי: <span>₪${Math.round(sum).toLocaleString()}</span>`;
+
+    if (clients.length === 0) {
+        body.innerHTML = `<div class="breakdown-empty">אין נתונים לחודש זה</div>`;
+    } else {
+        body.innerHTML = clients.map(c => `
+            <div class="breakdown-row">
+                <span class="breakdown-row-name">${c.name}</span>
+                <span class="breakdown-row-amount ${amtClass}">₪${Math.round(c.amount).toLocaleString()}</span>
+            </div>`).join('');
+    }
+
+    overlay.classList.add('open');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeBreakdownModal(event) {
+    // אם הופעלה מה-overlay עצמו, לסגור רק אם הקליק היה על ה-overlay (לא על תוכן המודל)
+    if (event && event.target !== document.getElementById('breakdown-overlay')) return;
+    document.getElementById('breakdown-overlay').classList.remove('open');
+    document.body.style.overflow = '';
+}
+
+function forceCloseBreakdown() {
+    document.getElementById('breakdown-overlay').classList.remove('open');
+    document.body.style.overflow = '';
+}
+
+document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') forceCloseBreakdown();
+});
+
+// keyboard accessibility for stat cards
+document.querySelectorAll('.stat-card.clickable').forEach(card => {
+    card.addEventListener('keydown', e => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); card.click(); }
+    });
+});
 
 const paymentMethodsData = <?php echo json_encode($payments_data['payment_methods']); ?>;
 const monthlyData        = <?php echo json_encode($payments_data['monthly_breakdown']); ?>;

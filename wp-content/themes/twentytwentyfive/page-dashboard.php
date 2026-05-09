@@ -926,17 +926,26 @@ get_header(); ?>
             <div class="stat-label">מסיימות בקרוב</div>
         </a>
         
-        <div class="stat-card deals">
-            <div class="stat-icon"><i class="fa-solid fa-handshake"></i></div>
-            <div class="stat-number">₪<?php echo number_format($stats['monthly_deals']); ?></div>
-            <div class="stat-label">עסקאות החודש</div>
-        </div>
-
+        
         <a href="<?php echo (get_post_type_archive_link('clients') ?: home_url('/clients/')) . '?filter=unpaid'; ?>" class="stat-card unpaid" style="text-decoration: none; color: inherit;">
             <div class="stat-icon"><i class="fa-solid fa-credit-card"></i></div>
             <div class="stat-number"><?php echo $stats['unpaid'] + (isset($stats['partial']) ? $stats['partial'] : 0); ?></div>
             <div class="stat-label">ממתינות לתשלום</div>
         </a>
+        
+        <?php if (current_user_can('manage_options')): ?>
+            <a href="<?php echo home_url('/payments-management'); ?>" class="stat-card deals" style="text-decoration: none; color: inherit;">
+                <div class="stat-icon"><i class="fa-solid fa-handshake"></i></div>
+                <div class="stat-number">₪<?php echo number_format($stats['monthly_deals']); ?></div>
+                <div class="stat-label">עסקאות החודש</div>
+            </a>
+        <?php else: ?>
+            <div class="stat-card deals">
+                <div class="stat-icon"><i class="fa-solid fa-handshake"></i></div>
+                <div class="stat-number">₪<?php echo number_format($stats['monthly_deals']); ?></div>
+                <div class="stat-label">עסקאות החודש</div>
+            </div>
+        <?php endif; ?>
         
         <?php if (current_user_can('manage_options')): ?>
             <a href="<?php echo home_url('/payments-management'); ?>" class="stat-card income" style="text-decoration: none; color: inherit;">
@@ -951,6 +960,7 @@ get_header(); ?>
                 <div class="stat-label">הכנסות צפויות החודש</div>
             </div>
         <?php endif; ?>
+   
     </div>
 
     <!-- מתאמנות שמסיימות בקרוב ובהקפאה -->
