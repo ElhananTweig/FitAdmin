@@ -60,7 +60,7 @@ get_header(); ?>
     
     .stat-card.active { border-right-color: #a7c7e7; }
     .stat-card.ending { border-right-color: #f5d5a0; }
-    .stat-card.frozen { border-right-color: #d4c5f9; }
+    .stat-card.deals  { border-right-color: #99e6d4; }
     .stat-card.unpaid { border-right-color: #f5b7b1; }
     .stat-card.income { border-right-color: #b8e6b8; }
 
@@ -75,7 +75,7 @@ get_header(); ?>
     }
     .stat-card.active   .stat-icon i { color: #a7c7e7; }
     .stat-card.ending   .stat-icon i { color: #f5d5a0; }
-    .stat-card.frozen   .stat-icon i { color: #d4c5f9; }
+    .stat-card.deals    .stat-icon i { color: #99e6d4; }
     .stat-card.unpaid   .stat-icon i { color: #f5b7b1; }
     .stat-card.income   .stat-icon i { color: #b8e6b8; }
     
@@ -388,10 +388,13 @@ get_header(); ?>
             'paid' => 0,
             'unpaid' => 0,
             'total_income' => 0,
+            'monthly_deals' => 0,
+            'monthly_expected_income' => 0,
             'referral_sources' => array()
         );
-        
+
         $today = date('Y-m-d');
+        $current_month = date('Y-m');
         $one_week_later = date('Y-m-d', strtotime('+7 days')); // שבוע מהיום
         
         foreach ($clients as $client) {
@@ -444,7 +447,51 @@ get_header(); ?>
             
             // חישוב הכנסות
             $stats['total_income'] += $total_amount_paid;
-            
+
+            // עסקאות החודש - לפי תאריך יצירת הרשומה
+            $post_month = date('Y-m', strtotime($client->post_date));
+            if ($post_month === $current_month) {
+                $stats['monthly_deals'] += $payment_amount;
+            }
+
+            // הכנסות צפויות החודש - תשלומים שמגיעים החודש (כולל תשלומים בתשלומים)
+            $payment_date_primary = get_field('payment_date', $client->ID);
+            $installments_primary = intval(get_field('installments', $client->ID));
+            if ($payment_date_primary && $amount_paid > 0) {
+                if ($installments_primary > 1) {
+                    $pay_month = date('Y-m', strtotime($payment_date_primary));
+                    $diff = (intval(date('Y')) - intval(substr($pay_month, 0, 4))) * 12
+                          + (intval(date('m')) - intval(substr($pay_month, 5, 2)));
+                    if ($diff >= 0 && $diff < $installments_primary) {
+                        $stats['monthly_expected_income'] += $amount_paid / $installments_primary;
+                    }
+                } else {
+                    if (date('Y-m', strtotime($payment_date_primary)) === $current_month) {
+                        $stats['monthly_expected_income'] += $amount_paid;
+                    }
+                }
+            }
+            if ($additional_payments && is_array($additional_payments)) {
+                foreach ($additional_payments as $ap) {
+                    $ap_amount = isset($ap['amount']) ? floatval($ap['amount']) : 0;
+                    $ap_date   = isset($ap['date'])   ? $ap['date']             : '';
+                    $ap_inst   = isset($ap['installments']) ? intval($ap['installments']) : 1;
+                    if (!$ap_amount || !$ap_date) continue;
+                    if ($ap_inst > 1) {
+                        $ap_month = date('Y-m', strtotime($ap_date));
+                        $diff = (intval(date('Y')) - intval(substr($ap_month, 0, 4))) * 12
+                              + (intval(date('m')) - intval(substr($ap_month, 5, 2)));
+                        if ($diff >= 0 && $diff < $ap_inst) {
+                            $stats['monthly_expected_income'] += $ap_amount / $ap_inst;
+                        }
+                    } else {
+                        if (date('Y-m', strtotime($ap_date)) === $current_month) {
+                            $stats['monthly_expected_income'] += $ap_amount;
+                        }
+                    }
+                }
+            }
+
             // ספירת מקורות הגעה
             if ($referral_source) {
                 if (!isset($stats['referral_sources'][$referral_source])) {
@@ -879,12 +926,12 @@ get_header(); ?>
             <div class="stat-label">מסיימות בקרוב</div>
         </a>
         
-        <a href="<?php echo (get_post_type_archive_link('clients') ?: home_url('/clients/')) . '?filter=frozen'; ?>" class="stat-card frozen" style="text-decoration: none; color: inherit;">
-            <div class="stat-icon"><i class="fa-solid fa-pause-circle"></i></div>
-            <div class="stat-number"><?php echo $stats['frozen']; ?></div>
-            <div class="stat-label">בהקפאה</div>
-        </a>
-        
+        <div class="stat-card deals">
+            <div class="stat-icon"><i class="fa-solid fa-handshake"></i></div>
+            <div class="stat-number">₪<?php echo number_format($stats['monthly_deals']); ?></div>
+            <div class="stat-label">עסקאות החודש</div>
+        </div>
+
         <a href="<?php echo (get_post_type_archive_link('clients') ?: home_url('/clients/')) . '?filter=unpaid'; ?>" class="stat-card unpaid" style="text-decoration: none; color: inherit;">
             <div class="stat-icon"><i class="fa-solid fa-credit-card"></i></div>
             <div class="stat-number"><?php echo $stats['unpaid'] + (isset($stats['partial']) ? $stats['partial'] : 0); ?></div>
@@ -894,14 +941,14 @@ get_header(); ?>
         <?php if (current_user_can('manage_options')): ?>
             <a href="<?php echo home_url('/payments-management'); ?>" class="stat-card income" style="text-decoration: none; color: inherit;">
                 <div class="stat-icon"><i class="fa-solid fa-shekel-sign"></i></div>
-                <div class="stat-number">₪<?php echo number_format($stats['total_income']); ?></div>
-                <div class="stat-label">הכנסות החודש</div>
+                <div class="stat-number">₪<?php echo number_format($stats['monthly_expected_income']); ?></div>
+                <div class="stat-label">הכנסות צפויות החודש</div>
             </a>
         <?php else: ?>
             <div class="stat-card income">
                 <div class="stat-icon"><i class="fa-solid fa-shekel-sign"></i></div>
-                <div class="stat-number">₪<?php echo number_format($stats['total_income']); ?></div>
-                <div class="stat-label">הכנסות החודש</div>
+                <div class="stat-number">₪<?php echo number_format($stats['monthly_expected_income']); ?></div>
+                <div class="stat-label">הכנסות צפויות החודש</div>
             </div>
         <?php endif; ?>
     </div>

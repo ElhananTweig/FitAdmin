@@ -1646,7 +1646,7 @@ function edit_client_ajax() {
             }
         }
         
-        wp_send_json_success(array('message' => 'תאמנת עודכנה בהצלחה!'));
+        wp_send_json_success(array('message' => 'המתאמנת עודכנה בהצלחה!'));
     } else {
         wp_send_json_error(array('message' => 'שגיאה בעדכון המתאמנת'));
     }
