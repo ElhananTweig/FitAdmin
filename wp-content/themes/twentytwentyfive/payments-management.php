@@ -1,20 +1,19 @@
 <?php
 /**
- * עמוד ניהול תשלומים - מבוסס על הלוגיקה מהאפליקציה הקודמת
+ * עמוד ניהול תשלומים
  */
 
 if (!defined('ABSPATH')) {
     exit;
 }
 
-// פונקציות עזר לחישוב תשלומים
 function get_payments_data() {
     $clients = get_posts(array(
         'post_type' => 'clients',
         'posts_per_page' => -1,
         'post_status' => 'publish'
     ));
-    
+
     $payments_data = array(
         'total_expected' => 0,
         'total_received' => 0,
@@ -23,12 +22,11 @@ function get_payments_data() {
         'payment_methods' => array(),
         'monthly_breakdown' => array()
     );
-    
+
     foreach ($clients as $client) {
         $payment_amount = (float) get_field('payment_amount', $client->ID);
         $amount_paid = (float) get_field('amount_paid', $client->ID);
-        
-        // חישוב סך כל התשלומים כולל תשלומים נוספים
+
         $total_amount_paid = $amount_paid;
         $additional_payments = get_field('additional_payments', $client->ID);
         if ($additional_payments && is_array($additional_payments)) {
@@ -38,22 +36,20 @@ function get_payments_data() {
                 }
             }
         }
-        
+
         $payment_method = get_field('payment_method', $client->ID);
         $payment_date = get_field('payment_date', $client->ID);
         $start_date = get_field('start_date', $client->ID);
         $first_name = get_field('first_name', $client->ID);
         $last_name = get_field('last_name', $client->ID);
         $phone = get_field('phone', $client->ID);
-        
+
         $pending_amount = $payment_amount - $total_amount_paid;
-        
-        // חישוב סטטיסטיקות כלליות
+
         $payments_data['total_expected'] += $payment_amount;
         $payments_data['total_received'] += $total_amount_paid;
         $payments_data['total_pending'] += $pending_amount;
-        
-        // נתוני לקוח
+
         $client_data = array(
             'id' => $client->ID,
             'name' => $first_name . ' ' . $last_name,
@@ -66,18 +62,16 @@ function get_payments_data() {
             'start_date' => $start_date,
             'status' => $pending_amount <= 0 ? 'paid' : ($total_amount_paid > 0 ? 'partial' : 'unpaid')
         );
-        
+
         $payments_data['clients_data'][] = $client_data;
-        
-        // ספירת אמצעי תשלום
+
         if ($payment_method && $total_amount_paid > 0) {
             if (!isset($payments_data['payment_methods'][$payment_method])) {
                 $payments_data['payment_methods'][$payment_method] = 0;
             }
             $payments_data['payment_methods'][$payment_method] += $total_amount_paid;
         }
-        
-        // פירוק חודשי
+
         if ($payment_date) {
             $month = date('Y-m', strtotime($payment_date));
             if (!isset($payments_data['monthly_breakdown'][$month])) {
@@ -86,13 +80,74 @@ function get_payments_data() {
             $payments_data['monthly_breakdown'][$month] += $total_amount_paid;
         }
     }
-    
+
     return $payments_data;
 }
 
 $payments_data = get_payments_data();
 
-// תוויות לאמצעי תשלום
+// חישוב עסקאות החודש והכנסות צפויות החודש
+$current_month = date('Y-m');
+$monthly_deals = 0;
+$monthly_expected_income = 0;
+
+$all_clients_for_monthly = get_posts(array(
+    'post_type' => 'clients',
+    'posts_per_page' => -1,
+    'post_status' => 'publish'
+));
+
+foreach ($all_clients_for_monthly as $c) {
+    $payment_amount_c = (float) get_field('payment_amount', $c->ID);
+    $amount_paid_c    = (float) get_field('amount_paid', $c->ID);
+
+    // עסקאות החודש
+    $post_month = date('Y-m', strtotime($c->post_date));
+    if ($post_month === $current_month) {
+        $monthly_deals += $payment_amount_c;
+    }
+
+    // הכנסות צפויות החודש
+    $payment_date_primary  = get_field('payment_date', $c->ID);
+    $installments_primary  = intval(get_field('installments', $c->ID));
+    if ($payment_date_primary && $amount_paid_c > 0) {
+        if ($installments_primary > 1) {
+            $pay_month = date('Y-m', strtotime($payment_date_primary));
+            $diff = (intval(date('Y')) - intval(substr($pay_month, 0, 4))) * 12
+                  + (intval(date('m')) - intval(substr($pay_month, 5, 2)));
+            if ($diff >= 0 && $diff < $installments_primary) {
+                $monthly_expected_income += $amount_paid_c / $installments_primary;
+            }
+        } else {
+            if (date('Y-m', strtotime($payment_date_primary)) === $current_month) {
+                $monthly_expected_income += $amount_paid_c;
+            }
+        }
+    }
+
+    $additional_payments_c = get_field('additional_payments', $c->ID);
+    if ($additional_payments_c && is_array($additional_payments_c)) {
+        foreach ($additional_payments_c as $ap) {
+            $ap_amount = isset($ap['amount']) ? floatval($ap['amount']) : 0;
+            $ap_date   = isset($ap['date'])   ? $ap['date']             : '';
+            $ap_inst   = isset($ap['installments']) ? intval($ap['installments']) : 1;
+            if (!$ap_amount || !$ap_date) continue;
+            if ($ap_inst > 1) {
+                $ap_month = date('Y-m', strtotime($ap_date));
+                $diff = (intval(date('Y')) - intval(substr($ap_month, 0, 4))) * 12
+                      + (intval(date('m')) - intval(substr($ap_month, 5, 2)));
+                if ($diff >= 0 && $diff < $ap_inst) {
+                    $monthly_expected_income += $ap_amount / $ap_inst;
+                }
+            } else {
+                if (date('Y-m', strtotime($ap_date)) === $current_month) {
+                    $monthly_expected_income += $ap_amount;
+                }
+            }
+        }
+    }
+}
+
 $payment_method_labels = array(
     'cash' => 'מזומן',
     'credit' => 'כרטיס אשראי',
@@ -102,147 +157,495 @@ $payment_method_labels = array(
 );
 ?>
 
-<div class="wrap" style="direction: rtl;">
-    <h1>💰 ניהול תשלומים</h1>
-    
-    <!-- סטטיסטיקות כלליות -->
-    <div class="payments-overview" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin: 20px 0;">
-        <div class="stat-card" style="background: linear-gradient(135deg, #10b981, #059669); color: white; padding: 20px; border-radius: 12px; text-align: center;">
-            <h3 style="margin: 0 0 10px 0; font-size: 1.1rem;">💵 סה"כ התקבל</h3>
-            <div style="font-size: 2rem; font-weight: bold;">₪<?php echo number_format($payments_data['total_received']); ?></div>
+<style>
+.crm-payments-page {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    direction: rtl;
+    text-align: right;
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.payments-page-header {
+    background: linear-gradient(135deg, #1a3a2a 0%, #2d5a3d 100%);
+    border: 1px solid rgba(255, 255, 255, 0.91);
+    border-radius: 16px;
+    padding: 30px 40px;
+    margin-bottom: 40px;
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.2);
+}
+
+.payments-page-header h1 {
+    color: #d7dedc;
+    font-size: 2rem;
+    font-weight: 700;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.payments-page-header h1 i {
+    color: #b8e6b8;
+    font-size: 1.8rem;
+}
+
+.payments-overview {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 25px;
+    margin-bottom: 40px;
+}
+
+.stat-card {
+    background: rgba(38, 59, 52, 0.70);
+    backdrop-filter: blur(5.9px);
+    -webkit-backdrop-filter: blur(5.9px);
+    border: 1px solid rgba(255, 255, 255, 0.91);
+    border-right: 5px solid;
+    padding: 30px;
+    border-radius: 16px;
+    text-align: center;
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.stat-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+}
+
+.stat-card.pending { border-right-color: #f5d5a0; }
+.stat-card.deals   { border-right-color: #99e6d4; }
+.stat-card.income  { border-right-color: #b8e6b8; }
+
+.stat-card .stat-icon {
+    font-size: 2.5rem;
+    margin-bottom: 15px;
+}
+
+.stat-card.pending .stat-icon i { color: #f5d5a0; }
+.stat-card.deals   .stat-icon i { color: #99e6d4; }
+.stat-card.income  .stat-icon i { color: #b8e6b8; }
+
+.stat-card .stat-number {
+    font-size: 2.5rem;
+    font-weight: bold;
+    color: #d7dedc;
+    margin-bottom: 10px;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.stat-card .stat-label {
+    color: #d7dedc;
+    font-size: 1rem;
+    font-weight: 600;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.payments-filters {
+    background: rgba(85, 85, 85, 0.70);
+    backdrop-filter: blur(5.9px);
+    -webkit-backdrop-filter: blur(5.9px);
+    border: 1px solid rgba(255, 255, 255, 0.91);
+    padding: 25px 30px;
+    border-radius: 16px;
+    margin-bottom: 30px;
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+}
+
+.payments-filters h3 {
+    color: #d7dedc;
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin: 0 0 16px 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.filters-row {
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.filters-row select,
+.filters-row input[type="text"] {
+    padding: 9px 14px;
+    background: rgba(38, 59, 52, 0.60);
+    border: 1px solid rgba(255, 255, 255, 0.50);
+    border-radius: 8px;
+    color: #d7dedc;
+    font-size: 0.95rem;
+    direction: rtl;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.filters-row select:focus,
+.filters-row input[type="text"]:focus {
+    border-color: rgba(255, 255, 255, 0.80);
+}
+
+.filters-row select option {
+    background: #2d5a3d;
+    color: #d7dedc;
+}
+
+.filters-row input[type="text"]::placeholder {
+    color: rgba(215, 222, 220, 0.6);
+}
+
+.btn-clear-filters {
+    padding: 9px 18px;
+    background: rgba(107, 114, 128, 0.60);
+    border: 1px solid rgba(255, 255, 255, 0.40);
+    border-radius: 8px;
+    color: #d7dedc;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-weight: 600;
+}
+
+.btn-clear-filters:hover {
+    background: rgba(107, 114, 128, 0.85);
+    transform: translateY(-1px);
+}
+
+.payments-table-container {
+    background: rgba(38, 59, 52, 0.70);
+    backdrop-filter: blur(5.9px);
+    -webkit-backdrop-filter: blur(5.9px);
+    border: 1px solid rgba(255, 255, 255, 0.91);
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+    margin-bottom: 30px;
+}
+
+.payments-table-container table {
+    width: 100%;
+    border-collapse: collapse;
+    direction: rtl;
+}
+
+.payments-table-container thead th {
+    padding: 16px 14px;
+    background: rgba(20, 40, 30, 0.70);
+    color: #d7dedc;
+    font-weight: 700;
+    font-size: 0.9rem;
+    text-align: right;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.20);
+    white-space: nowrap;
+}
+
+.payments-table-container tbody tr {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.10);
+    transition: background 0.2s;
+}
+
+.payments-table-container tbody tr:last-child {
+    border-bottom: none;
+}
+
+.payments-table-container tbody tr:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.payments-table-container tbody td {
+    padding: 14px 14px;
+    color: #d7dedc;
+    font-size: 0.95rem;
+    vertical-align: middle;
+}
+
+.status-badge {
+    font-weight: bold;
+    font-size: 0.9rem;
+}
+
+.btn-edit {
+    padding: 6px 14px;
+    background: rgba(59, 130, 246, 0.75);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-decoration: none;
+    display: inline-block;
+}
+
+.btn-edit:hover {
+    background: rgba(59, 130, 246, 1);
+    transform: translateY(-1px);
+}
+
+.btn-call {
+    padding: 6px 14px;
+    background: rgba(5, 150, 105, 0.75);
+    color: white;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    text-decoration: none;
+    display: inline-block;
+    transition: all 0.2s;
+}
+
+.btn-call:hover {
+    background: rgba(5, 150, 105, 1);
+    transform: translateY(-1px);
+}
+
+.charts-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 25px;
+    margin-bottom: 30px;
+}
+
+.chart-panel {
+    background: rgba(85, 85, 85, 0.70);
+    backdrop-filter: blur(5.9px);
+    -webkit-backdrop-filter: blur(5.9px);
+    border: 1px solid rgba(255, 255, 255, 0.91);
+    padding: 25px 30px;
+    border-radius: 16px;
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+}
+
+.chart-panel h3 {
+    color: #d7dedc;
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin: 0 0 20px 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+    padding-bottom: 14px;
+}
+
+.chart-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 11px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.10);
+    color: #d7dedc;
+}
+
+.chart-row:last-child {
+    border-bottom: none;
+}
+
+.chart-row-label {
+    font-weight: 600;
+    font-size: 0.95rem;
+}
+
+.chart-row-values {
+    text-align: left;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.chart-row-amount {
+    font-weight: bold;
+    font-size: 0.95rem;
+    color: #99e6d4;
+}
+
+.chart-row-pct {
+    font-size: 0.8rem;
+    opacity: 0.75;
+}
+
+.chart-row-monthly-amount {
+    font-weight: bold;
+    font-size: 0.95rem;
+    color: #b8e6b8;
+}
+
+@media (max-width: 768px) {
+    .payments-overview {
+        grid-template-columns: 1fr 1fr;
+    }
+    .charts-grid {
+        grid-template-columns: 1fr;
+    }
+    .filters-row {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    .filters-row select,
+    .filters-row input[type="text"],
+    .btn-clear-filters {
+        width: 100%;
+    }
+    .payments-table-container tbody td,
+    .payments-table-container thead th {
+        padding: 10px 8px;
+        font-size: 0.82rem;
+    }
+    .payments-page-header h1 {
+        font-size: 1.4rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .payments-overview {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+
+<div class="crm-payments-page">
+
+    <div class="payments-page-header">
+        <h1><i class="fa-solid fa-money-bill-wave"></i> ניהול תשלומים</h1>
+    </div>
+
+    <!-- כרטיסיות סטטיסטיקה -->
+    <div class="payments-overview">
+        <div class="stat-card pending">
+            <div class="stat-icon"><i class="fa-solid fa-clock"></i></div>
+            <div class="stat-number">₪<?php echo number_format($payments_data['total_pending']); ?></div>
+            <div class="stat-label">ממתין לתשלום</div>
         </div>
-        
-        <div class="stat-card" style="background: linear-gradient(135deg, #f59e0b, #d97706); color: white; padding: 20px; border-radius: 12px; text-align: center;">
-            <h3 style="margin: 0 0 10px 0; font-size: 1.1rem;">⏳ ממתין לתשלום</h3>
-            <div style="font-size: 2rem; font-weight: bold;">₪<?php echo number_format($payments_data['total_pending']); ?></div>
+
+        <div class="stat-card deals">
+            <div class="stat-icon"><i class="fa-solid fa-handshake"></i></div>
+            <div class="stat-number">₪<?php echo number_format($monthly_deals); ?></div>
+            <div class="stat-label">עסקאות החודש</div>
         </div>
-        
-        <div class="stat-card" style="background: linear-gradient(135deg, #3b82f6, #2563eb); color: white; padding: 20px; border-radius: 12px; text-align: center;">
-            <h3 style="margin: 0 0 10px 0; font-size: 1.1rem;">📊 סה"כ צפוי</h3>
-            <div style="font-size: 2rem; font-weight: bold;">₪<?php echo number_format($payments_data['total_expected']); ?></div>
-        </div>
-        
-        <div class="stat-card" style="background: linear-gradient(135deg, #8b5cf6, #7c3aed); color: white; padding: 20px; border-radius: 12px; text-align: center;">
-            <h3 style="margin: 0 0 10px 0; font-size: 1.1rem;">📈 אחוז גביה</h3>
-            <div style="font-size: 2rem; font-weight: bold;">
-                <?php echo $payments_data['total_expected'] > 0 ? round(($payments_data['total_received'] / $payments_data['total_expected']) * 100) : 0; ?>%
-            </div>
+
+        <div class="stat-card income">
+            <div class="stat-icon"><i class="fa-solid fa-shekel-sign"></i></div>
+            <div class="stat-number">₪<?php echo number_format($monthly_expected_income); ?></div>
+            <div class="stat-label">הכנסות צפויות החודש</div>
         </div>
     </div>
-    
+
     <!-- פילטרים -->
-    <div class="payments-filters" style="background: white; padding: 20px; border-radius: 12px; margin: 20px 0; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
-        <h3>🔍 סינון תשלומים</h3>
-        <div style="display: flex; gap: 15px; flex-wrap: wrap; align-items: center;">
-            <select id="status-filter" style="padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 6px;">
+    <div class="payments-filters">
+        <h3><i class="fa-solid fa-magnifying-glass"></i> סינון תשלומים</h3>
+        <div class="filters-row">
+            <select id="status-filter">
                 <option value="">כל הסטטוסים</option>
                 <option value="paid">שולם במלואו</option>
                 <option value="partial">שולם חלקית</option>
                 <option value="unpaid">לא שולם</option>
             </select>
-            
-            <select id="method-filter" style="padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 6px;">
+
+            <select id="method-filter">
                 <option value="">כל אמצעי התשלום</option>
                 <?php foreach ($payment_method_labels as $key => $label): ?>
                     <option value="<?php echo $key; ?>"><?php echo $label; ?></option>
                 <?php endforeach; ?>
             </select>
-            
-            <input type="text" id="search-filter" placeholder="חיפוש לפי שם..." style="padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 6px; min-width: 200px;">
-            
-            <button onclick="clearFilters()" style="padding: 8px 16px; background: #6b7280; color: white; border: none; border-radius: 6px; cursor: pointer;">
-                נקה סינון
-            </button>
+
+            <input type="text" id="search-filter" placeholder="חיפוש לפי שם...">
+
+            <button class="btn-clear-filters" onclick="clearFilters()">נקה סינון</button>
         </div>
     </div>
-    
+
     <!-- טבלת תשלומים -->
-    <div class="payments-table-container" style="background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
-        <table class="wp-list-table widefat fixed striped" id="payments-table">
+    <div class="payments-table-container">
+        <table id="payments-table">
             <thead>
                 <tr>
-                    <th style="padding: 15px; background: #f8fafc; font-weight: bold;">👤 שם מתאמנת</th>
-                    <th style="padding: 15px; background: #f8fafc; font-weight: bold;">📞 טלפון</th>
-                    <th style="padding: 15px; background: #f8fafc; font-weight: bold;">💰 סכום לתשלום</th>
-                    <th style="padding: 15px; background: #f8fafc; font-weight: bold;">✅ שולם</th>
-                    <th style="padding: 15px; background: #f8fafc; font-weight: bold;">⏳ נותר</th>
-                    <th style="padding: 15px; background: #f8fafc; font-weight: bold;">💳 אמצעי</th>
-                    <th style="padding: 15px; background: #f8fafc; font-weight: bold;">📅 תאריך</th>
-                    <th style="padding: 15px; background: #f8fafc; font-weight: bold;">🎯 סטטוס</th>
-                    <th style="padding: 15px; background: #f8fafc; font-weight: bold;">⚙️ פעולות</th>
+                    <th>👤 שם מתאמנת</th>
+                    <th>📞 טלפון</th>
+                    <th>💰 סכום לתשלום</th>
+                    <th>✅ שולם</th>
+                    <th>⏳ נותר</th>
+                    <th>💳 אמצעי</th>
+                    <th>📅 תאריך</th>
+                    <th>🎯 סטטוס</th>
+                    <th>⚙️ פעולות</th>
                 </tr>
             </thead>
             <tbody>
                 <?php foreach ($payments_data['clients_data'] as $client): ?>
-                    <tr class="payment-row" 
-                        data-status="<?php echo $client['status']; ?>" 
-                        data-method="<?php echo $client['payment_method']; ?>" 
+                    <tr class="payment-row"
+                        data-status="<?php echo $client['status']; ?>"
+                        data-method="<?php echo $client['payment_method']; ?>"
                         data-name="<?php echo strtolower($client['name']); ?>">
-                        
-                        <td style="padding: 15px; font-weight: bold;">
-                            <a href="<?php echo get_edit_post_link($client['id']); ?>" style="color: #3b82f6; text-decoration: none;">
-                                <?php echo $client['name']; ?>
+
+                        <td style="font-weight: bold;">
+                            <a href="<?php echo get_edit_post_link($client['id']); ?>" style="color: #a7c7e7; text-decoration: none;">
+                                <?php echo esc_html($client['name']); ?>
                             </a>
                         </td>
-                        
-                        <td style="padding: 15px;">
+
+                        <td>
                             <?php if ($client['phone']): ?>
-                                <a href="tel:<?php echo $client['phone']; ?>" style="color: #059669; text-decoration: none;">
-                                    <?php echo $client['phone']; ?>
+                                <a href="tel:<?php echo esc_attr($client['phone']); ?>" style="color: #99e6d4; text-decoration: none;">
+                                    <?php echo esc_html($client['phone']); ?>
                                 </a>
                             <?php endif; ?>
                         </td>
-                        
-                        <td style="padding: 15px; font-weight: bold; color: #1f2937;">
+
+                        <td style="font-weight: bold;">
                             ₪<?php echo number_format($client['payment_amount']); ?>
                         </td>
-                        
-                        <td style="padding: 15px; color: #059669; font-weight: bold;">
+
+                        <td style="color: #99e6d4; font-weight: bold;">
                             ₪<?php echo number_format($client['amount_paid']); ?>
                         </td>
-                        
-                        <td style="padding: 15px; color: <?php echo $client['pending_amount'] > 0 ? '#dc2626' : '#059669'; ?>; font-weight: bold;">
+
+                        <td style="color: <?php echo $client['pending_amount'] > 0 ? '#f5b7b1' : '#99e6d4'; ?>; font-weight: bold;">
                             ₪<?php echo number_format($client['pending_amount']); ?>
                         </td>
-                        
-                        <td style="padding: 15px;">
-                            <?php echo $client['payment_method'] ? $payment_method_labels[$client['payment_method']] : '-'; ?>
+
+                        <td>
+                            <?php echo $client['payment_method'] ? esc_html($payment_method_labels[$client['payment_method']]) : '-'; ?>
                         </td>
-                        
-                        <td style="padding: 15px;">
+
+                        <td>
                             <?php echo $client['payment_date'] ? date('d/m/Y', strtotime($client['payment_date'])) : '-'; ?>
                         </td>
-                        
-                        <td style="padding: 15px;">
+
+                        <td>
                             <?php
                             $status_colors = array(
-                                'paid' => '#059669',
-                                'partial' => '#f59e0b',
-                                'unpaid' => '#dc2626'
+                                'paid'    => '#99e6d4',
+                                'partial' => '#f5d5a0',
+                                'unpaid'  => '#f5b7b1'
                             );
                             $status_labels = array(
-                                'paid' => '✅ שולם',
+                                'paid'    => '✅ שולם',
                                 'partial' => '⚠️ חלקי',
-                                'unpaid' => '❌ לא שולם'
+                                'unpaid'  => '❌ לא שולם'
                             );
                             ?>
-                            <span style="color: <?php echo $status_colors[$client['status']]; ?>; font-weight: bold;">
+                            <span class="status-badge" style="color: <?php echo $status_colors[$client['status']]; ?>;">
                                 <?php echo $status_labels[$client['status']]; ?>
                             </span>
                         </td>
-                        
-                        <td style="padding: 15px;">
+
+                        <td>
                             <div style="display: flex; gap: 8px;">
-                                <button type="button" 
-                                        onclick="openEditClientModal(<?php echo $client['id']; ?>)" 
-                                        style="padding: 6px 12px; background: #3b82f6; color: white; text-decoration: none; border-radius: 4px; font-size: 0.875rem; border: none; cursor: pointer; width: 100%;">
+                                <button type="button"
+                                        class="btn-edit"
+                                        onclick="openEditClientModal(<?php echo $client['id']; ?>)">
                                     ✏️ ערוך
                                 </button>
-
                                 <?php if ($client['phone']): ?>
-                                    <a href="tel:<?php echo $client['phone']; ?>" 
-                                       style="padding: 6px 12px; background: #059669; color: white; text-decoration: none; border-radius: 4px; font-size: 0.875rem;">
-                                        📞 התקשר
+                                    <a href="tel:<?php echo esc_attr($client['phone']); ?>" class="btn-call">
+                                        📞
                                     </a>
                                 <?php endif; ?>
                             </div>
@@ -252,42 +655,37 @@ $payment_method_labels = array(
             </tbody>
         </table>
     </div>
-    
-    <!-- גרפים ואנליטיקס -->
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin: 30px 0;">
-        <!-- פירוק לפי אמצעי תשלום -->
-        <div style="background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
-            <h3>💳 פירוק לפי אמצעי תשלום</h3>
-            <div id="payment-methods-chart" style="height: 300px;"></div>
+
+    <!-- גרפים -->
+    <div class="charts-grid">
+        <div class="chart-panel">
+            <h3><i class="fa-solid fa-credit-card"></i> פירוק לפי אמצעי תשלום</h3>
+            <div id="payment-methods-chart"></div>
         </div>
-        
-        <!-- הכנסות חודשיות -->
-        <div style="background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
-            <h3>📊 הכנסות חודשיות</h3>
-            <div id="monthly-income-chart" style="height: 300px;"></div>
+
+        <div class="chart-panel">
+            <h3><i class="fa-solid fa-chart-line"></i> הכנסות חודשיות</h3>
+            <div id="monthly-income-chart"></div>
         </div>
     </div>
+
 </div>
 
 <script>
-// פונקציות סינון
 function filterTable() {
     const statusFilter = document.getElementById('status-filter').value;
     const methodFilter = document.getElementById('method-filter').value;
     const searchFilter = document.getElementById('search-filter').value.toLowerCase();
     const rows = document.querySelectorAll('.payment-row');
-    
+
     rows.forEach(row => {
         const status = row.dataset.status;
         const method = row.dataset.method;
-        const name = row.dataset.name;
-        
+        const name   = row.dataset.name;
         let show = true;
-        
         if (statusFilter && status !== statusFilter) show = false;
         if (methodFilter && method !== methodFilter) show = false;
         if (searchFilter && !name.includes(searchFilter)) show = false;
-        
         row.style.display = show ? '' : 'none';
     });
 }
@@ -299,89 +697,47 @@ function clearFilters() {
     filterTable();
 }
 
-// הוספת event listeners
 document.getElementById('status-filter').addEventListener('change', filterTable);
 document.getElementById('method-filter').addEventListener('change', filterTable);
 document.getElementById('search-filter').addEventListener('input', filterTable);
 
-// נתונים לגרפים
 const paymentMethodsData = <?php echo json_encode($payments_data['payment_methods']); ?>;
-const monthlyData = <?php echo json_encode($payments_data['monthly_breakdown']); ?>;
-const methodLabels = <?php echo json_encode($payment_method_labels); ?>;
+const monthlyData        = <?php echo json_encode($payments_data['monthly_breakdown']); ?>;
+const methodLabels       = <?php echo json_encode($payment_method_labels); ?>;
+const totalReceived      = <?php echo (float) $payments_data['total_received']; ?>;
 
-// יצירת גרף אמצעי תשלום
+// גרף אמצעי תשלום
 if (Object.keys(paymentMethodsData).length > 0) {
-    const methodsChart = document.getElementById('payment-methods-chart');
-    let methodsHtml = '';
-    
+    const container = document.getElementById('payment-methods-chart');
+    let html = '';
     Object.keys(paymentMethodsData).forEach(method => {
         const amount = paymentMethodsData[method];
-        const percentage = (amount / <?php echo $payments_data['total_received']; ?>) * 100;
+        const pct = totalReceived > 0 ? ((amount / totalReceived) * 100).toFixed(1) : '0.0';
         const label = methodLabels[method] || method;
-        
-        methodsHtml += `
-            <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #e5e7eb;">
-                <span style="font-weight: bold;">${label}</span>
-                <div style="text-align: left;">
-                    <div style="font-weight: bold; color: #059669;">₪${amount.toLocaleString()}</div>
-                    <div style="font-size: 0.875rem; color: #6b7280;">${percentage.toFixed(1)}%</div>
-                </div>
+        html += `<div class="chart-row">
+            <span class="chart-row-label">${label}</span>
+            <div class="chart-row-values">
+                <span class="chart-row-amount">₪${amount.toLocaleString()}</span>
+                <span class="chart-row-pct">${pct}%</span>
             </div>
-        `;
+        </div>`;
     });
-    
-    methodsChart.innerHTML = methodsHtml;
+    container.innerHTML = html;
 }
 
-// יצירת גרף הכנסות חודשיות
+// גרף הכנסות חודשיות
 if (Object.keys(monthlyData).length > 0) {
-    const monthlyChart = document.getElementById('monthly-income-chart');
-    let monthlyHtml = '';
-    
-    // מיון לפי חודש
+    const container = document.getElementById('monthly-income-chart');
     const sortedMonths = Object.keys(monthlyData).sort();
-    
+    let html = '';
     sortedMonths.forEach(month => {
         const amount = monthlyData[month];
         const monthName = new Date(month + '-01').toLocaleDateString('he-IL', { year: 'numeric', month: 'long' });
-        
-        monthlyHtml += `
-            <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #e5e7eb;">
-                <span style="font-weight: bold;">${monthName}</span>
-                <div style="font-weight: bold; color: #3b82f6;">₪${amount.toLocaleString()}</div>
-            </div>
-        `;
+        html += `<div class="chart-row">
+            <span class="chart-row-label">${monthName}</span>
+            <span class="chart-row-monthly-amount">₪${amount.toLocaleString()}</span>
+        </div>`;
     });
-    
-    monthlyChart.innerHTML = monthlyHtml;
+    container.innerHTML = html;
 }
 </script>
-
-<style>
-.payments-table-container {
-    overflow-x: auto;
-}
-
-@media (max-width: 768px) {
-    .payments-overview {
-        grid-template-columns: 1fr 1fr !important;
-    }
-    
-    .payments-filters > div {
-        flex-direction: column !important;
-        align-items: stretch !important;
-    }
-    
-    .payments-filters select,
-    .payments-filters input {
-        width: 100% !important;
-        min-width: auto !important;
-    }
-    
-    #payments-table th,
-    #payments-table td {
-        padding: 8px !important;
-        font-size: 0.875rem;
-    }
-}
-</style> 
