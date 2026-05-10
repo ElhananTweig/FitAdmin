@@ -187,7 +187,8 @@ get_header(); ?>
 </div>
 
 <!-- פופאפ רווח קבוצה -->
-<div class="gp-overlay" id="gp-overlay" onclick="closeGroupProfitModal(event)">
+<div class="gp-overlay" id="gp-overlay">
+    <div class="gp-backdrop" onclick="forceCloseGroupProfit()"></div>
     <div class="gp-modal" role="dialog" aria-modal="true" aria-labelledby="gp-title">
         <div class="gp-header">
             <h2 id="gp-title">💰 <span id="gp-title-text"></span></h2>
@@ -243,37 +244,47 @@ get_header(); ?>
 .gp-overlay {
     display: none;
     position: fixed;
-    inset: 0;
-    background: rgba(0, 0, 0, 0.55);
-    z-index: 9000;
-    align-items: center;
-    justify-content: center;
-    backdrop-filter: blur(3px);
-    -webkit-backdrop-filter: blur(3px);
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 10000;
+    direction: rtl;
 }
 
 .gp-overlay.open {
-    display: flex;
+    display: block;
+}
+
+.gp-backdrop {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
 }
 
 @keyframes gpSlideUp {
-    from { opacity: 0; transform: translateY(30px) scale(0.97); }
+    from { opacity: 0; transform: translateY(-20px) scale(0.97); }
     to   { opacity: 1; transform: translateY(0) scale(1); }
 }
 
 .gp-modal {
-    background: rgba(28, 50, 38, 0.97);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+    position: relative;
+    background: rgba(28, 50, 38, 0.95);
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
     border: 1px solid rgba(255, 255, 255, 0.85);
     border-radius: 20px;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
     width: 100%;
     max-width: 560px;
-    max-height: 85vh;
-    display: flex;
-    flex-direction: column;
-    animation: gpSlideUp 0.25s ease;
+    max-height: 90vh;
+    margin: 5vh auto;
+    animation: gpSlideUp 0.3s ease-out;
     direction: rtl;
     overflow: hidden;
 }
@@ -284,7 +295,9 @@ get_header(); ?>
     align-items: center;
     padding: 20px 24px 16px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.15);
-    flex-shrink: 0;
+    position: sticky;
+    top: 0;
+    z-index: 10;
 }
 
 .gp-header h2 {
@@ -313,7 +326,7 @@ get_header(); ?>
 .gp-body {
     overflow-y: auto;
     padding: 20px 24px;
-    flex: 1;
+    max-height: 60vh;
 }
 
 .gp-section {
@@ -457,7 +470,6 @@ get_header(); ?>
     gap: 12px;
     justify-content: flex-end;
     border-top: 1px solid rgba(255, 255, 255, 0.1);
-    flex-shrink: 0;
 }
 
 .gp-save-btn {
@@ -503,6 +515,11 @@ get_header(); ?>
 </style>
 
 <script>
+// העברת ה-overlay ישירות ל-body כדי לצאת מ-stacking context של backdrop-filter
+document.addEventListener('DOMContentLoaded', function() {
+    document.body.appendChild(document.getElementById('gp-overlay'));
+});
+
 // נתוני רווח קבוצה
 const allGroupProfitData = <?php echo json_encode($group_profit_data, JSON_UNESCAPED_UNICODE); ?>;
 const gpAjaxUrl  = '<?php echo admin_url("admin-ajax.php"); ?>';
@@ -669,11 +686,6 @@ async function saveGroupProfitData() {
         saveBtn.disabled = false;
         saveBtn.textContent = '💾 שמור שינויים';
     }
-}
-
-function closeGroupProfitModal(event) {
-    if (event && event.target !== document.getElementById('gp-overlay')) return;
-    _doCloseGP();
 }
 
 function forceCloseGroupProfit() {
