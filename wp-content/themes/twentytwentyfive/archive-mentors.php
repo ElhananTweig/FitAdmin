@@ -410,7 +410,7 @@ get_header(); ?>
                     
                     <?php if ($payment_percentage): ?>
                         <div class="mentor-commission">
-                            💰 עמלה: <?php echo $payment_percentage; ?>%
+                            💰 סכום לקבוצה: ₪<?php echo number_format($payment_percentage); ?>
                         </div>
                     <?php endif; ?>
                     

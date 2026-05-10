@@ -103,22 +103,22 @@ if ($is_edit) {
                 </div>
             </div>
             
-            <!-- פרטי עמלה -->
+            <!-- סכום לקבוצה -->
             <div class="form-section" style="margin-bottom: 30px;">
                 <h2 style="color: #1f2937; border-bottom: 2px solid #10b981; padding-bottom: 10px; margin-bottom: 20px;">
-                    💰 פרטי עמלה
+                    💰 סכום לקבוצה
                 </h2>
-                
+
                 <div>
                     <label for="payment_percentage" style="display: block; font-weight: bold; margin-bottom: 5px; color: #374151;">
-                        אחוז עמלה (%)
+                        סכום לקבוצה (₪)
                     </label>
-                    <input type="number" id="payment_percentage" name="payment_percentage" min="0" max="100" step="0.1" 
-                           value="<?php echo isset($mentor_data['payment_percentage']) ? esc_attr($mentor_data['payment_percentage']) : '40'; ?>"
+                    <input type="number" id="payment_percentage" name="payment_percentage" min="0" step="1"
+                           value="<?php echo isset($mentor_data['payment_percentage']) ? esc_attr($mentor_data['payment_percentage']) : '0'; ?>"
                            style="width: 100%; padding: 12px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 16px;"
-                           placeholder="40">
+                           placeholder="0">
                     <small style="color: #6b7280; font-size: 0.875rem; margin-top: 5px; display: block;">
-                        ברירת מחדל: 40%. ניתן לשנות בהתאם לצורך.
+                        הסכום הקבוע שהמנטורית מקבלת לכל אימון קבוצה בשקלים.
                     </small>
                 </div>
             </div>
@@ -165,7 +165,7 @@ if ($is_edit) {
     <div style="background: #f8fafc; padding: 20px; border-radius: 12px; margin-top: 20px; max-width: 600px;">
         <h3 style="color: #1f2937; margin-bottom: 15px;">💡 מידע חשוב</h3>
         <ul style="color: #6b7280; line-height: 1.6;">
-            <li><strong>אחוז עמלה:</strong> ברירת המחדל היא 40%, אך ניתן לשנות בהתאם לצורך</li>
+            <li><strong>סכום לקבוצה:</strong> הסכום הקבוע שהמנטורית מקבלת לאימון קבוצה בשקלים</li>
             <li><strong>קישור מתאמנות:</strong> לאחר יצירת המנטורית, ניתן לקשר אליה מתאמנות בעריכת פרטי המתאמנת</li>
             <li><strong>דוחות:</strong> המערכת תחשב אוטומטית את העמלות המגיעות למנטורית</li>
             <li><strong>עדכון פרטים:</strong> ניתן לערוך את פרטי המנטורית בכל עת מרשימת המנטוריות</li>
@@ -198,23 +198,10 @@ document.querySelector('button[type="submit"]').addEventListener('mouseleave', f
     this.style.boxShadow = 'none';
 });
 
-// ולידציה לאחוז עמלה
+// ולידציה לסכום לקבוצה
 document.getElementById('payment_percentage').addEventListener('input', function() {
     const value = parseFloat(this.value);
     if (value < 0) this.value = 0;
-    if (value > 100) this.value = 100;
-});
-
-// הוספת אפקט לשדה אחוז עמלה
-document.getElementById('payment_percentage').addEventListener('change', function() {
-    const value = parseFloat(this.value);
-    if (value > 50) {
-        this.style.borderColor = '#f59e0b';
-        this.style.backgroundColor = '#fef3c7';
-    } else {
-        this.style.borderColor = '#d1d5db';
-        this.style.backgroundColor = 'white';
-    }
 });
 </script>
 

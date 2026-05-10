@@ -331,11 +331,11 @@ $payment_methods = array(
                 
                 <!-- פרטי עמלה -->
                 <div class="form-section">
-                    <h3 class="section-title">💰 פרטי עמלה</h3>
+                    <h3 class="section-title">💰 סכום לקבוצה</h3>
                     <div class="form-group">
-                        <label for="paymentPercentage">אחוז עמלה (%)</label>
-                        <input type="number" id="paymentPercentage" name="payment_percentage" min="0" max="100" step="0.1" value="40" placeholder="40">
-                        <small style="color: #6b7280; font-size: 0.875rem; display: block; margin-top: 5px;">ברירת מחדל: 40%. ניתן לשנות בהתאם לצורך.</small>
+                        <label for="paymentPercentage">סכום לקבוצה (₪)</label>
+                        <input type="number" id="paymentPercentage" name="payment_percentage" min="0" step="1" value="0" placeholder="0">
+                        <small style="color: #6b7280; font-size: 0.875rem; display: block; margin-top: 5px;">הסכום הקבוע שהמנטורית מקבלת לכל אימון קבוצה.</small>
                     </div>
                 </div>
                 

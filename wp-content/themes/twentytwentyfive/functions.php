@@ -848,11 +848,11 @@ function add_client_custom_fields() {
                 ),
                 array(
                     'key' => 'field_payment_percentage',
-                    'label' => 'אחוז עמלה',
+                    'label' => 'סכום לקבוצה',
                     'name' => 'payment_percentage',
                     'type' => 'number',
-                    'append' => '%',
-                    'default_value' => 40,
+                    'prepend' => '₪',
+                    'default_value' => 0,
                 ),
                 array(
                     'key' => 'field_mentor',
@@ -1031,11 +1031,11 @@ function add_client_custom_fields() {
                 ),
                 array(
                     'key' => 'field_payment_percentage',
-                    'label' => 'אחוז עמלה',
+                    'label' => 'סכום לקבוצה',
                     'name' => 'payment_percentage',
                     'type' => 'number',
-                    'append' => '%',
-                    'default_value' => 40,
+                    'prepend' => '₪',
+                    'default_value' => 0,
                 ),
                 array(
                     'key' => 'field_mentor_notes',
@@ -2334,6 +2334,37 @@ function edit_mentor_ajax() {
 }
 add_action('wp_ajax_edit_mentor_ajax', 'edit_mentor_ajax');
 add_action('wp_ajax_nopriv_edit_mentor_ajax', 'edit_mentor_ajax');
+
+// AJAX handler לשמירת שורות מותאמות ברווח קבוצה
+function save_group_profit_rows() {
+    if (!wp_verify_nonce($_POST['nonce'], 'delete_group_nonce')) {
+        wp_send_json_error('שגיאת אבטחה');
+    }
+
+    $group_id = intval($_POST['group_id']);
+    if (!$group_id) {
+        wp_send_json_error('מזהה קבוצה לא תקין');
+    }
+
+    $custom_income   = wp_unslash($_POST['custom_income'] ?? '[]');
+    $custom_expenses = wp_unslash($_POST['custom_expenses'] ?? '[]');
+
+    json_decode($custom_income);
+    if (json_last_error() !== JSON_ERROR_NONE) {
+        wp_send_json_error('JSON שגוי - הכנסות');
+    }
+    json_decode($custom_expenses);
+    if (json_last_error() !== JSON_ERROR_NONE) {
+        wp_send_json_error('JSON שגוי - הוצאות');
+    }
+
+    update_post_meta($group_id, 'group_custom_income', $custom_income);
+    update_post_meta($group_id, 'group_custom_expenses', $custom_expenses);
+
+    wp_send_json_success('נשמר בהצלחה');
+}
+add_action('wp_ajax_save_group_profit_rows', 'save_group_profit_rows');
+add_action('wp_ajax_nopriv_save_group_profit_rows', 'save_group_profit_rows');
 
 // AJAX handler למחיקת מתאמנת
 function delete_client_ajax() {
