@@ -69,6 +69,7 @@
             text-shadow: 0 2px 4px rgba(0,0,0,0.3);
             transition: all 0.3s ease;
             text-align: center;
+            line-height: 1.4;
         }
         
         .crm-logo:hover {
@@ -283,7 +284,7 @@
 <header class="crm-header">
     <div class="crm-header-content">
         <a href="<?php echo home_url(); ?>" class="crm-logo">
-            🌟 CRM תזונה - מרים קרישבסקי
+            🌟 CRM תזונה<br>מרים קרישבסקי
         </a>
         
         <nav class="crm-nav">
@@ -292,6 +293,7 @@
             <a href="<?php echo get_post_type_archive_link('mentors') ?: home_url('/mentors/'); ?>">👩‍💼 מנטוריות</a>
             <a href="<?php echo get_post_type_archive_link('groups') ?: home_url('/groups/'); ?>">🎯 קבוצות</a>
             <a href="<?php echo home_url('/finished-clients/'); ?>">📝 מתאמנות שסיימו</a>
+            <a href="<?php echo home_url('/payments-management/'); ?>">💳 ניהול תשלומים</a>
         </nav>
         
         <div class="user-actions">
